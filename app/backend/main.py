@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.backend.database import create_db_and_tables
-from app.backend.routers import categories, extras, menu, recipes
+from app.backend.routers import categories, extras, menu, profile, recipes
 
 
 @asynccontextmanager
@@ -37,6 +37,7 @@ app.include_router(recipes.router)
 app.include_router(categories.router)
 app.include_router(menu.router)
 app.include_router(extras.router)
+app.include_router(profile.router)
 
 
 @app.get("/health", tags=["health"])

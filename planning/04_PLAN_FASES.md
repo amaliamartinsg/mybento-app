@@ -12,7 +12,7 @@ FASE 0  [██████████] 100% Setup
 FASE 1  [██████████] 100% Modelos BD
 FASE 2  [██████████] 100% Backend Recetas
 FASE 3  [██████████] 100% Backend Menú
-FASE 4  [          ] 0%   Backend Perfil
+FASE 4  [██████████] 100% Backend Perfil
 FASE 5  [          ] 0%   Frontend Base
 FASE 6  [          ] 0%   Frontend Recetas
 FASE 7  [          ] 0%   Frontend Menú
@@ -172,20 +172,20 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Dependencias:** FASE 1 completa  
 > **Duración estimada:** 0.5 sesiones (módulo pequeño)
 
-- [ ] Crear `app/core/tdee.py`
-  - [ ] Función `calculate_bmr(weight_kg, height_cm, age, gender) -> float` — fórmula Mifflin-St Jeor
-  - [ ] Función `calculate_tdee(bmr, activity_level: ActivityLevel) -> float` — multiplicadores
-  - [ ] Función `apply_goal(tdee, goal: Goal) -> float` — déficit/mantenimiento/superávit
-  - [ ] Tests en `app/core/tests/test_tdee.py`
-- [ ] Crear `app/core/macro_targets.py`
-  - [ ] Función `calculate_macro_grams(kcal_target, prot_pct, hc_pct, fat_pct) -> MacroGrams`
-  - [ ] Fórmula: prot_g = (kcal_target * prot_pct/100) / 4 ; hc_g / 4 ; fat_g / 9
-- [ ] Crear `app/backend/routers/profile.py`
-  - [ ] `GET /profile` — devolver perfil actual con todos los targets calculados
-  - [ ] `PUT /profile` — actualizar, recalcular TDEE y macro_g_targets, guardar en BD
-  - [ ] `POST /profile/calculate-tdee` — preview sin guardar (útil para la UI en tiempo real)
-- [ ] Registrar router en `app/backend/main.py`
-- [ ] Testar en Swagger: modificar perfil y verificar que kcal_target se recalcula
+- [x] Crear `app/core/tdee.py`
+  - [x] Función `calculate_bmr(weight_kg, height_cm, age, gender) -> float` — fórmula Mifflin-St Jeor
+  - [x] Función `calculate_tdee(bmr, activity_level: ActivityLevel) -> float` — multiplicadores
+  - [x] Función `apply_goal(tdee, goal: Goal) -> float` — déficit/mantenimiento/superávit
+  - [x] Tests en `app/core/tests/test_tdee.py`
+- [x] Crear `app/core/macro_targets.py`
+  - [x] Función `calculate_macro_grams(kcal_target, prot_pct, hc_pct, fat_pct) -> MacroGrams`
+  - [x] Fórmula: prot_g = (kcal_target * prot_pct/100) / 4 ; hc_g / 4 ; fat_g / 9
+- [x] Crear `app/backend/routers/profile.py`
+  - [x] `GET /profile` — devolver perfil actual con todos los targets calculados
+  - [x] `PUT /profile` — actualizar, recalcular TDEE y macro_g_targets, guardar en BD
+  - [x] `POST /profile/calculate-tdee` — preview sin guardar (útil para la UI en tiempo real)
+- [x] Registrar router en `app/backend/main.py`
+- [x] Testar en Swagger: modificar perfil y verificar que kcal_target se recalcula
 
 ---
 
