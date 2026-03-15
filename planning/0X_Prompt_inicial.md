@@ -69,18 +69,12 @@ archivos en este orden:
 
 # TAREA INICIAL
 
-Empieza por la **FASE 0 — Setup y Scaffolding** definida en 04_PLAN_FASES.md.
+Continúa por la **FASE 2 — Backend CRUD de Recetas** definida en 04_PLAN_FASES.md.
 
 Lee primero los checkboxes de esa fase y luego implementa cada punto en orden,
 confirmando cada uno antes de pasar al siguiente.
 
-El objetivo al final de la Fase 0 es:
-- La estructura de directorios completa creada
-- El backend arranca con `uvicorn backend.main:app --reload` sin errores
-- `http://localhost:8000/docs` muestra Swagger UI
-- El frontend arranca con `python frontend/main.py` y abre una ventana vacía
-- El `APIClient` base está creado y funcional
-- El `.gitignore` está configurado correctamente
+El objetivo al final de la Fase 1 es:
+- Todas las tablas existen en SQLite. El seed carga datos iniciales. 
 
-Cuando termines cada archivo o grupo de archivos relacionados, muéstrame 
-el código completo y espera mi confirmación antes de continuar con el siguiente.
+Cuando termines cada archivo o grupo de archivos relacionados, no esperes mi confirmación antes de continuar con el siguiente. Cuando completes la fase entera, avísame de las comprobaciones que debo seguir para comprobar si está todo correcto.

@@ -9,7 +9,7 @@
 
 ```
 FASE 0  [██████████] 100% Setup
-FASE 1  [          ] 0%   Modelos BD
+FASE 1  [██████████] 100% Modelos BD
 FASE 2  [          ] 0%   Backend Recetas
 FASE 3  [          ] 0%   Backend Menú
 FASE 4  [          ] 0%   Backend Perfil
@@ -52,29 +52,29 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Duración estimada:** 1 sesión
 
 ### Modelos SQLModel
-- [ ] Crear `app/backend/models/category.py` — `Category`, `SubCategory`
-- [ ] Crear `app/backend/models/recipe.py` — `Recipe`, `RecipeIngredient`
-- [ ] Crear `app/backend/models/menu.py` — `MenuWeek`, `MenuDay`, `MenuSlot` + Enum `SlotType`
-- [ ] Crear `app/backend/models/extra.py` — `Extra`, `MenuDayExtra`
-- [ ] Crear `app/backend/models/profile.py` — `Profile` + Enums `ActivityLevel`, `Goal`
-- [ ] Crear `app/backend/models/__init__.py` exportando todos los modelos
-- [ ] Añadir `SQLModel.metadata.create_all(engine)` en `database.py`
-- [ ] Verificar creación de tablas ejecutando el backend (revisar con DB Browser for SQLite)
+- [x] Crear `app/backend/models/category.py` — `Category`, `SubCategory`
+- [x] Crear `app/backend/models/recipe.py` — `Recipe`, `RecipeIngredient`
+- [x] Crear `app/backend/models/menu.py` — `MenuWeek`, `MenuDay`, `MenuSlot` + Enum `SlotType`
+- [x] Crear `app/backend/models/extra.py` — `Extra`, `MenuDayExtra`
+- [x] Crear `app/backend/models/profile.py` — `Profile` + Enums `ActivityLevel`, `Goal`
+- [x] Crear `app/backend/models/__init__.py` exportando todos los modelos
+- [x] Añadir `SQLModel.metadata.create_all(engine)` en `database.py`
+- [x] Verificar creación de tablas ejecutando el backend (revisar con DB Browser for SQLite)
 
 ### Schemas Pydantic
-- [ ] Crear `app/backend/schemas/recipe.py` — `RecipeCreate`, `RecipeRead`, `RecipeUpdate`, `IngredientInput`
-- [ ] Crear `app/backend/schemas/menu.py` — `MenuWeekRead`, `SlotUpdate`, `DayMacrosSummary`
-- [ ] Crear `app/backend/schemas/category.py` — `CategoryCreate`, `CategoryRead` (con subcategorías anidadas)
-- [ ] Crear `app/backend/schemas/extra.py` — `ExtraCreate`, `ExtraRead`
-- [ ] Crear `app/backend/schemas/profile.py` — `ProfileUpdate`, `ProfileRead`
+- [x] Crear `app/backend/schemas/recipe.py` — `RecipeCreate`, `RecipeRead`, `RecipeUpdate`, `IngredientInput`
+- [x] Crear `app/backend/schemas/menu.py` — `MenuWeekRead`, `SlotUpdate`, `DayMacrosSummary`
+- [x] Crear `app/backend/schemas/category.py` — `CategoryCreate`, `CategoryRead` (con subcategorías anidadas)
+- [x] Crear `app/backend/schemas/extra.py` — `ExtraCreate`, `ExtraRead`
+- [x] Crear `app/backend/schemas/profile.py` — `ProfileUpdate`, `ProfileRead`
 
 ### Seed de datos iniciales
-- [ ] Crear `app/data/seed.py`
-- [ ] Seed: categorías por defecto (Desayuno, Comida, Cena, Snack con subcategorías)
-- [ ] Seed: perfil por defecto (id=1, valores razonables)
-- [ ] Seed: 3-5 extras predefinidos de ejemplo ("Café con leche", "Fruta", "Whey")
-- [ ] Seed: 2-3 recetas de ejemplo con ingredientes (para testear la UI)
-- [ ] Verificar ejecutando `python app/data/seed.py` y revisando la BD
+- [x] Crear `app/data/seed.py`
+- [x] Seed: categorías por defecto (Desayuno, Comida, Cena, Snack con subcategorías)
+- [x] Seed: perfil por defecto (id=1, valores razonables)
+- [x] Seed: 3-5 extras predefinidos de ejemplo ("Café con leche", "Fruta", "Whey")
+- [x] Seed: 2-3 recetas de ejemplo con ingredientes (para testear la UI)
+- [x] Verificar ejecutando `python app/data/seed.py` y revisando la BD
 
 ---
 
