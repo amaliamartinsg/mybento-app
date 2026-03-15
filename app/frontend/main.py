@@ -23,7 +23,7 @@ def main(page: ft.Page) -> None:
                 ft.Text(
                     "Gestión de recetas y menús semanales",
                     size=16,
-                    color=ft.colors.GREY_600,
+                    color=ft.Colors.GREY_600,
                 ),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,

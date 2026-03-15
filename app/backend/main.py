@@ -6,7 +6,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.database import create_db_and_tables
+from app.backend.database import create_db_and_tables
 
 
 @asynccontextmanager

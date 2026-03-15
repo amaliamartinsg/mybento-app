@@ -8,7 +8,7 @@
 ## Progreso Global
 
 ```
-FASE 0  [          ] 0%   Setup
+FASE 0  [██████████] 100% Setup
 FASE 1  [          ] 0%   Modelos BD
 FASE 2  [          ] 0%   Backend Recetas
 FASE 3  [          ] 0%   Backend Menú
@@ -28,20 +28,20 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Dependencias:** Ninguna  
 > **Duración estimada:** 1 sesión
 
-- [ ] Crear estructura de directorios completa (ver `02_ARQUITECTURA.md`)
-- [ ] Crear entorno virtual: `python -m venv .venv`
-- [ ] Activar entorno: `source .venv/bin/activate` (Linux/Mac) o `.venv\Scripts\activate` (Windows)
-- [ ] Instalar dependencias: `pip install -r requirements.txt`
-- [ ] Crear `.env` a partir de `.env.example` (en la raíz, fuera de `/app`)
-- [ ] Crear `app/backend/database.py` con engine SQLite y función `get_session()`
-- [ ] Crear `app/backend/main.py` con FastAPI, CORS habilitado para Flet (`localhost:*`)
-- [ ] Verificar que `uvicorn app.backend.main:app --reload` arranca sin errores
-- [ ] Verificar que `http://localhost:8000/docs` muestra Swagger UI
-- [ ] Crear `app/frontend/main.py` con Flet app mínima (ventana vacía con título)
-- [ ] Verificar que `python app/frontend/main.py` abre la ventana
-- [ ] Crear `app/frontend/api_client.py` con clase `APIClient` base (método `get` y `post` con httpx)
-- [ ] Crear `.gitignore` con: `.env`, `.venv/`, `__pycache__/`, `*.db`, `.DS_Store`
-- [ ] Commit inicial: `git init` + `git add .` + `git commit -m "feat: project scaffolding"`
+- [x] Crear estructura de directorios completa (ver `02_ARQUITECTURA.md`)
+- [x] Crear entorno virtual: `python -m venv .venv`
+- [x] Activar entorno: `source .venv/bin/activate` (Linux/Mac) o `.venv\Scripts\activate` (Windows)
+- [x] Instalar dependencias: `pip install -r requirements.txt`
+- [x] Crear `.env` a partir de `.env.example` (en la raíz, fuera de `/app`)
+- [x] Crear `app/backend/database.py` con engine SQLite y función `get_session()`
+- [x] Crear `app/backend/main.py` con FastAPI, CORS habilitado para Flet (`localhost:*`)
+- [x] Verificar que `uvicorn app.backend.main:app --reload` arranca sin errores
+- [x] Verificar que `http://localhost:8000/docs` muestra Swagger UI
+- [x] Crear `app/frontend/main.py` con Flet app mínima (ventana vacía con título)
+- [x] Verificar que `python app/frontend/main.py` abre la ventana
+- [x] Crear `app/frontend/api_client.py` con clase `APIClient` base (método `get` y `post` con httpx)
+- [x] Crear `.gitignore` con: `.env`, `.venv/`, `__pycache__/`, `*.db`, `.DS_Store`
+- [x] Commit inicial: `git init` + `git add .` + `git commit -m "feat: project scaffolding"`
 
 ---
 
