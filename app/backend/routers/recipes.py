@@ -280,13 +280,25 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
                 )
 
             totals = calculate_recipe_macros(new_rows)
-            recipe.kcal = totals.kcal
-            recipe.prot_g = totals.prot_g
-            recipe.hc_g = totals.hc_g
-            recipe.fat_g = totals.fat_g
+            # Manual overrides take precedence over USDA-calculated values
+            recipe.kcal = payload.kcal if payload.kcal is not None else totals.kcal
+            recipe.prot_g = payload.prot_g if payload.prot_g is not None else totals.prot_g
+            recipe.hc_g = payload.hc_g if payload.hc_g is not None else totals.hc_g
+            recipe.fat_g = payload.fat_g if payload.fat_g is not None else totals.fat_g
 
             for row in new_rows:
                 session.add(row)
+
+        else:
+            # No ingredient changes — apply manual macro overrides directly
+            if payload.kcal is not None:
+                recipe.kcal = payload.kcal
+            if payload.prot_g is not None:
+                recipe.prot_g = payload.prot_g
+            if payload.hc_g is not None:
+                recipe.hc_g = payload.hc_g
+            if payload.fat_g is not None:
+                recipe.fat_g = payload.fat_g
 
         session.add(recipe)
         session.commit()
