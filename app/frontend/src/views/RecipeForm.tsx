@@ -29,7 +29,7 @@ import ImageCarousel from '../components/ImageCarousel'
 import { useCreateRecipe, useUpdateRecipe } from '../hooks/useRecipes'
 import { searchImages } from '../api/recipes'
 import { lookupUnitWeight, createUnitWeight } from '../api/unitWeights'
-import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion } from '../types/recipe'
+import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion, MealType } from '../types/recipe'
 import type { Category } from '../types/category'
 
 // ─── Shared label style ───────────────────────────────────────────────────────
@@ -60,6 +60,7 @@ const styledInput = {
 interface RecipeFormValues {
   name: string
   subcategory_id: string
+  meal_type: MealType
   servings: number
   instructions_text: string
   image_url: string
@@ -114,6 +115,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     defaultValues: {
       name: '',
       subcategory_id: '',
+      meal_type: 'plato_unico',
       servings: 1,
       instructions_text: '',
       image_url: '',
@@ -147,6 +149,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       reset({
         name: prefill.name,
         subcategory_id: '',
+        meal_type: 'plato_unico',
         servings: 1,
         instructions_text: prefill.instructions_text,
         image_url: '',
@@ -170,6 +173,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       reset({
         name: recipe.name,
         subcategory_id: subcat !== null ? String(subcat) : '',
+        meal_type: recipe.meal_type ?? 'plato_unico',
         servings: recipe.servings,
         instructions_text: recipe.instructions_text ?? '',
         image_url: recipe.image_url ?? '',
@@ -188,6 +192,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     reset({
       name: '',
       subcategory_id: '',
+      meal_type: 'plato_unico',
       servings: 1,
       instructions_text: '',
       image_url: '',
@@ -204,6 +209,8 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   }
 
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId) ?? null
+  const isComidaCategory = selectedCategory?.name.toLowerCase() === 'comida'
+  const watchedMealType = watch('meal_type')
 
   const handleSearchImages = async () => {
     const query = recipeName.trim() || 'comida saludable'
@@ -266,6 +273,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     const basePayload = {
       name: values.name.trim(),
       subcategory_id: values.subcategory_id ? Number(values.subcategory_id) : null,
+      meal_type: values.meal_type,
       servings: values.servings,
       instructions_text: values.instructions_text.trim() || null,
       image_url: values.image_url.trim() || null,
@@ -529,6 +537,48 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 />
               </Box>
             </Box>
+
+            {/* Meal type selector — only for Comida category */}
+            {isComidaCategory && (
+              <Box>
+                <Typography sx={fieldLabel}>Tipo de plato</Typography>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  {([
+                    { value: 'plato_unico', label: 'Plato único' },
+                    { value: 'primero', label: '1er plato' },
+                    { value: 'segundo', label: '2º plato' },
+                  ] as const).map(({ value, label }) => (
+                    <Box
+                      key={value}
+                      onClick={() => setValue('meal_type', value)}
+                      sx={{
+                        flex: 1,
+                        py: 1.5,
+                        px: 1,
+                        textAlign: 'center',
+                        borderRadius: '16px',
+                        cursor: 'pointer',
+                        border: watchedMealType === value
+                          ? '2px solid #4da8ff'
+                          : '2px solid rgba(195,199,208,0.4)',
+                        bgcolor: watchedMealType === value ? '#eef2ff' : 'background.paper',
+                        transition: 'all 0.15s',
+                        '&:hover': { borderColor: '#4da8ff' },
+                      }}
+                    >
+                      <Typography sx={{
+                        fontFamily: '"Inter", sans-serif',
+                        fontWeight: watchedMealType === value ? 700 : 500,
+                        fontSize: 13,
+                        color: watchedMealType === value ? '#4da8ff' : '#44464f',
+                      }}>
+                        {label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
 
             {/* Servings counter */}
             <Box

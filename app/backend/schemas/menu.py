@@ -14,6 +14,7 @@ class SlotRead(BaseModel):
     id: int
     slot_type: SlotType
     recipe: RecipeSummary | None
+    second_recipe: RecipeSummary | None = None
 
     model_config = {"from_attributes": True}
 
@@ -88,3 +89,4 @@ class SlotUpdate(BaseModel):
     """Payload to assign or clear a recipe in a slot."""
 
     recipe_id: int | None = None
+    second_recipe_id: int | None = None

@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.backend.models.recipe import MealType
+
 
 class IngredientInput(BaseModel):
     """A single ingredient line sent by the client when creating/updating a recipe."""
@@ -34,6 +36,7 @@ class RecipeCreate(BaseModel):
 
     name: str
     subcategory_id: int | None = None
+    meal_type: MealType = MealType.PLATO_UNICO
     instructions_text: str | None = None
     image_url: str | None = None
     external_url: str | None = None
@@ -51,6 +54,7 @@ class RecipeUpdate(BaseModel):
 
     name: str | None = None
     subcategory_id: int | None = None
+    meal_type: MealType | None = None
     instructions_text: str | None = None
     image_url: str | None = None
     external_url: str | None = None
@@ -68,6 +72,7 @@ class RecipeRead(BaseModel):
     id: int
     name: str
     subcategory_id: int | None
+    meal_type: MealType
     instructions_text: str | None
     image_url: str | None
     external_url: str | None
@@ -107,6 +112,7 @@ class RecipeSummary(BaseModel):
 
     id: int
     name: str
+    meal_type: MealType
     kcal: float
     prot_g: float
     hc_g: float

@@ -186,6 +186,7 @@ async def create_recipe(payload: RecipeCreate) -> RecipeRead:
     recipe = Recipe(
         name=payload.name,
         subcategory_id=payload.subcategory_id,
+        meal_type=payload.meal_type,
         instructions_text=payload.instructions_text,
         image_url=payload.image_url,
         servings=payload.servings,
@@ -240,6 +241,8 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
             recipe.name = payload.name
         if payload.subcategory_id is not None:
             recipe.subcategory_id = payload.subcategory_id
+        if payload.meal_type is not None:
+            recipe.meal_type = payload.meal_type
         if payload.instructions_text is not None:
             recipe.instructions_text = payload.instructions_text
         if payload.image_url is not None:

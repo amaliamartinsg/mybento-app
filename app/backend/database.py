@@ -4,6 +4,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator
 
+from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine
 
 # noqa: F401 — side-effect import: registers all SQLModel table metadata
@@ -17,10 +18,28 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
+# Incremental ALTER TABLE migrations for SQLite (safe to run multiple times)
+_MIGRATIONS = [
+    "ALTER TABLE recipe ADD COLUMN meal_type TEXT NOT NULL DEFAULT 'plato_unico'",
+    "ALTER TABLE menuslot ADD COLUMN second_recipe_id INTEGER REFERENCES recipe(id)",
+]
+
+
+def _run_migrations() -> None:
+    """Apply incremental column additions. Silently skips already-applied ones."""
+    with engine.connect() as conn:
+        for sql in _MIGRATIONS:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists — skip
+
 
 def create_db_and_tables() -> None:
-    """Create all tables defined in SQLModel metadata."""
+    """Create all tables defined in SQLModel metadata, then apply migrations."""
     SQLModel.metadata.create_all(engine)
+    _run_migrations()
 
 
 @contextmanager

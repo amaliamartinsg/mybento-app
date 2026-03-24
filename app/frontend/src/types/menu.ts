@@ -1,8 +1,11 @@
 export type SlotType = 'desayuno' | 'media_manana' | 'comida' | 'merienda' | 'cena'
 
+export type MealType = 'plato_unico' | 'primero' | 'segundo'
+
 export interface RecipeSummary {
   id: number
   name: string
+  meal_type: MealType
   kcal: number
   prot_g: number
   hc_g: number
@@ -14,6 +17,7 @@ export interface MenuSlot {
   id: number
   slot_type: SlotType
   recipe: RecipeSummary | null
+  second_recipe: RecipeSummary | null
 }
 
 export interface DayExtraRead {

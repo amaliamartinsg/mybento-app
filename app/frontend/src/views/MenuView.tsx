@@ -100,6 +100,7 @@ function SlotCell({ slot, onEmpty, onFilled }: SlotCellProps) {
   if (!slot) return <Box sx={{ height: 96 }} />
 
   if (slot.recipe) {
+    const hasPair = slot.second_recipe !== null
     return (
       <Box
         onClick={() => onFilled(slot)}
@@ -110,26 +111,71 @@ function SlotCell({ slot, onEmpty, onFilled }: SlotCellProps) {
           borderRadius: '12px',
           p: 1.5,
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
+          justifyContent: hasPair ? 'space-between' : 'center',
           cursor: 'pointer',
           transition: 'all 0.15s',
+          gap: hasPair ? 0.5 : 0,
           '&:hover': { bgcolor: 'rgba(0,130,253,0.14)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
         }}
       >
-        <Typography
-          sx={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#4da8ff',
-            lineHeight: 1.3,
-            overflow: 'hidden',
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {slot.recipe.name}
-        </Typography>
+        {hasPair && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Typography sx={{ fontSize: 9, fontWeight: 800, color: '#005cb2', minWidth: 14, mt: 0.1 }}>1°</Typography>
+            <Typography
+              sx={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#4da8ff',
+                lineHeight: 1.3,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {slot.recipe.name}
+            </Typography>
+          </Box>
+        )}
+        {!hasPair && (
+          <Typography
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#4da8ff',
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {slot.recipe.name}
+          </Typography>
+        )}
+        {hasPair && slot.second_recipe && (
+          <>
+            <Box sx={{ borderTop: '1px solid rgba(0,130,253,0.15)', mx: -1.5 }} />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+              <Typography sx={{ fontSize: 9, fontWeight: 800, color: '#005cb2', minWidth: 14, mt: 0.1 }}>2°</Typography>
+              <Typography
+                sx={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#4da8ff',
+                  lineHeight: 1.3,
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {slot.second_recipe.name}
+              </Typography>
+            </Box>
+          </>
+        )}
       </Box>
     )
   }
@@ -521,6 +567,7 @@ function MenuView() {
           slotId={selectedSlot.id}
           slotType={selectedSlot.slot_type}
           weekStart={weekStart}
+          currentSlot={selectedSlot}
         />
       )}
 
