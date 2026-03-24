@@ -209,6 +209,7 @@ function MenuView() {
 
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<MenuSlot | null>(null)
+  const [selectedSlotDayId, setSelectedSlotDayId] = useState<number | null>(null)
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null)
   const [infoSlot, setInfoSlot] = useState<MenuSlot | null>(null)
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null)
@@ -243,18 +244,21 @@ function MenuView() {
     )
   }
 
-  function handleEmptyCellClick(slot: MenuSlot) {
+  function handleEmptyCellClick(slot: MenuSlot, dayId: number) {
     setSelectedSlot(slot)
+    setSelectedSlotDayId(dayId)
     setSelectorOpen(true)
   }
 
-  function handleFilledCellClick(slot: MenuSlot) {
+  function handleFilledCellClick(slot: MenuSlot, dayId: number) {
     setInfoSlot(slot)
+    setSelectedSlotDayId(dayId)
   }
 
   function handleInfoChange() {
     if (infoSlot) { setSelectedSlot(infoSlot); setSelectorOpen(true) }
     setInfoSlot(null)
+    // selectedSlotDayId is already set from the prior handleFilledCellClick
   }
 
   function handleInfoClear() {
@@ -427,8 +431,8 @@ function MenuView() {
                         <SlotCell
                           key={day.id}
                           slot={slot}
-                          onEmpty={() => slot && handleEmptyCellClick(slot)}
-                          onFilled={(s) => handleFilledCellClick(s)}
+                          onEmpty={() => slot && handleEmptyCellClick(slot, day.id)}
+                          onFilled={(s) => handleFilledCellClick(s, day.id)}
                         />
                       )
                     })}
@@ -567,6 +571,7 @@ function MenuView() {
           slotId={selectedSlot.id}
           slotType={selectedSlot.slot_type}
           weekStart={weekStart}
+          dayId={selectedSlotDayId ?? 0}
           currentSlot={selectedSlot}
         />
       )}

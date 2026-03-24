@@ -19,7 +19,6 @@ import Dialog from '@mui/material/Dialog'
 import FormControl from '@mui/material/FormControl'
 import FormHelperText from '@mui/material/FormHelperText'
 import IconButton from '@mui/material/IconButton'
-import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
@@ -134,7 +133,6 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const recipeName = watch('name')
   const servings = watch('servings')
 
-  const watchedSubcatId = watch('subcategory_id')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
 
   useEffect(() => {
