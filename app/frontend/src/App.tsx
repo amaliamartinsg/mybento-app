@@ -15,9 +15,9 @@ import RecipesView from './views/RecipesView'
 import MenuView from './views/MenuView'
 import SettingsView from './views/SettingsView'
 import { ColorModeContext } from './main'
+import logoSimple from './assets/mybento-logo-simple.png'
 
 const ROUTES = ['/', '/menu', '/settings']
-const ROUTE_TITLES = ['Recetas', 'MyBento', 'Ajustes']
 
 const NAV_ITEMS = [
   { label: 'Recetas', Icon: RestaurantIcon },
@@ -56,20 +56,30 @@ function App() {
           height: 56,
         }}
       >
-        <Toolbar sx={{ height: 56, minHeight: '56px !important', px: 3 }}>
-          <Typography
-            sx={{
-              fontFamily: '"Inter", sans-serif',
-              fontWeight: 700,
-              fontSize: 20,
-              color: 'white',
-              letterSpacing: '-0.02em',
-              flexGrow: 1,
-            }}
-          >
-            {ROUTE_TITLES[tabValue]}
-          </Typography>
-          <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small">
+        <Toolbar sx={{ height: 56, minHeight: '56px !important', px: 2 }}>
+          {/* Left spacer — same width as the right icon button to keep logo centered */}
+          <Box sx={{ width: 40 }} />
+
+          {/* Centered logo */}
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Box
+              component="img"
+              src={logoSimple}
+              alt="MyBento"
+              onClick={() => { navigate('/'); setTabValue(0) }}
+              sx={{
+                height: 28,
+                cursor: 'pointer',
+                filter: 'brightness(0) invert(1)',
+                userSelect: 'none',
+                transition: 'opacity 0.15s',
+                '&:hover': { opacity: 0.85 },
+              }}
+            />
+          </Box>
+
+          {/* Dark mode toggle */}
+          <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small" sx={{ width: 40 }}>
             {isDark ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
         </Toolbar>
