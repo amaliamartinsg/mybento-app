@@ -42,7 +42,12 @@ class RecipeCreate(BaseModel):
 
 
 class RecipeUpdate(BaseModel):
-    """Payload to update an existing Recipe (all fields optional)."""
+    """Payload to update an existing Recipe (all fields optional).
+
+    Macro fields (kcal, prot_g, hc_g, fat_g) allow manual overrides.
+    If ingredients are also provided, manual macros take precedence over
+    the USDA-calculated values.
+    """
 
     name: str | None = None
     subcategory_id: int | None = None
@@ -51,6 +56,10 @@ class RecipeUpdate(BaseModel):
     external_url: str | None = None
     servings: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientInput] | None = None
+    kcal: float | None = Field(default=None, ge=0)
+    prot_g: float | None = Field(default=None, ge=0)
+    hc_g: float | None = Field(default=None, ge=0)
+    fat_g: float | None = Field(default=None, ge=0)
 
 
 class RecipeRead(BaseModel):

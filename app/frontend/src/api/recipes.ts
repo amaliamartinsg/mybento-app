@@ -26,7 +26,7 @@ export async function deleteRecipe(id: number): Promise<void> {
 }
 
 export async function suggestRecipe(ingredients: string[]): Promise<RecipeSuggestion> {
-  const { data } = await client.post<RecipeSuggestion>('/recipes/suggest', { ingredients })
+  const { data } = await client.post<RecipeSuggestion>('/recipes/suggest', ingredients)
   return data
 }
 

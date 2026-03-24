@@ -48,6 +48,10 @@ export interface RecipeUpdate {
   external_url?: string | null
   servings?: number
   ingredients?: IngredientInput[]
+  kcal?: number
+  prot_g?: number
+  hc_g?: number
+  fat_g?: number
 }
 
 export interface RecipeSuggestion {
