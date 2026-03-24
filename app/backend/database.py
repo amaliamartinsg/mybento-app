@@ -1,5 +1,6 @@
-"""Database engine and session management for PyPlanner."""
+"""Database engine and session management for MyBento."""
 
+import os
 from contextlib import contextmanager
 from typing import Generator
 
@@ -8,7 +9,7 @@ from sqlmodel import Session, SQLModel, create_engine
 # noqa: F401 — side-effect import: registers all SQLModel table metadata
 import app.backend.models  # noqa: F401
 
-DATABASE_URL = "sqlite:///./recipe_manager.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./recipe_manager.db")
 
 engine = create_engine(
     DATABASE_URL,

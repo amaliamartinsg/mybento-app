@@ -37,6 +37,7 @@ class Recipe(SQLModel, table=True):
     subcategory_id: int | None = Field(default=None, foreign_key="subcategory.id")
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int = Field(default=1)
 
     # Macro totals — computed from ingredients via USDA, stored for fast reads

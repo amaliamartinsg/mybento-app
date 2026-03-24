@@ -20,6 +20,7 @@ export interface Recipe {
   subcategory_id: number | null
   instructions_text: string | null
   image_url: string | null
+  external_url: string | null
   servings: number
   kcal: number
   prot_g: number
@@ -34,6 +35,7 @@ export interface RecipeCreate {
   subcategory_id?: number | null
   instructions_text?: string | null
   image_url?: string | null
+  external_url?: string | null
   servings?: number
   ingredients: IngredientInput[]
 }
@@ -43,6 +45,7 @@ export interface RecipeUpdate {
   subcategory_id?: number | null
   instructions_text?: string | null
   image_url?: string | null
+  external_url?: string | null
   servings?: number
   ingredients?: IngredientInput[]
 }

@@ -1,4 +1,4 @@
-# PyPlanner
+# MyBento
 
 Aplicación de gestión de recetas y menús semanales con cálculo automático de macronutrientes.
 
@@ -18,7 +18,10 @@ cp .env.example .env        # Rellenar con las claves API reales
 uvicorn app.backend.main:app --reload --port 8000
 
 # Terminal 2 — Frontend
-python frontend/main.py
+cd app/frontend
+npm install      # solo la primera vez si no tienes node_modules
+npm run dev
+
 ```
 
 Ver [planning/03_APIS_EXTERNAS.md](planning/03_APIS_EXTERNAS.md) para configurar las APIs externas.

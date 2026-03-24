@@ -75,12 +75,12 @@ archivos en este orden:
 
 # TAREA INICIAL
 
-Continúa por la **FASE 5 — Frontend: Estructura Base** definida en 04_PLAN_FASES.md.
+Continúa por la **FASE 7 — Frontend: Pantalla B (Menú Semanal)** definida en 04_PLAN_FASES.md.
 
 Lee primero los checkboxes de esa fase y luego implementa cada punto en orden,
 confirmando cada uno antes de pasar al siguiente.
 
-El objetivo al final de la Fase 5 es:
--  App Flet navega entre 3 pantallas. Cliente HTTP conecta con el backend.
+El objetivo al final de la Fase 6 es:
+-  El usuario puede gestionar el menú semanal y ver macros por día.
 
 Cuando termines cada archivo o grupo de archivos relacionados, no esperes mi confirmación antes de continuar con el siguiente. Cuando completes la fase entera, avísame de las comprobaciones que debo seguir para comprobar si está todo correcto.

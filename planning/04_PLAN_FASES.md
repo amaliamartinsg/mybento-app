@@ -14,10 +14,10 @@ FASE 2  [██████████] 100% Backend Recetas
 FASE 3  [██████████] 100% Backend Menú
 FASE 4  [██████████] 100% Backend Perfil
 FASE 5  [██████████] 100% Frontend Base
-FASE 6  [          ] 0%   Frontend Recetas
-FASE 7  [          ] 0%   Frontend Menú
-FASE 8  [          ] 0%   Frontend Ajustes
-FASE 9  [          ] 0%   Polish & Testing
+FASE 6  [██████████] 100% Frontend Recetas
+FASE 7  [██████████] 100% Frontend Menú
+FASE 8  [██████████] 100% Frontend Ajustes
+FASE 9  [███       ] 35%  Polish & Testing
 ```
 
 ---
@@ -226,61 +226,61 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Duración estimada:** 2-3 sesiones
 
 ### Tipos y API layer
-- [ ] Crear `src/types/recipe.ts` — interfaces `Recipe`, `RecipeCreate`, `RecipeUpdate`, `RecipeIngredient`
-- [ ] Crear `src/types/category.ts` — interfaces `Category`, `SubCategory`
-- [ ] Crear `src/api/recipes.ts` — funciones: `getRecipes(filters?)`, `getRecipe(id)`, `createRecipe`, `updateRecipe`, `deleteRecipe`, `suggestRecipe`, `searchImages`
-- [ ] Crear `src/api/categories.ts` — función `getCategories()`
-- [ ] Crear `src/hooks/useRecipes.ts`:
-  - [ ] `useRecipes(filters)` — `useQuery(['recipes', filters], ...)`
-  - [ ] `useRecipe(id)` — `useQuery(['recipe', id], ...)`
-  - [ ] `useCreateRecipe()`, `useUpdateRecipe()`, `useDeleteRecipe()` — `useMutation` con `invalidateQueries`
+- [x] Crear `src/types/recipe.ts` — interfaces `Recipe`, `RecipeCreate`, `RecipeUpdate`, `RecipeIngredient`
+- [x] Crear `src/types/category.ts` — interfaces `Category`, `SubCategory`
+- [x] Crear `src/api/recipes.ts` — funciones: `getRecipes(filters?)`, `getRecipe(id)`, `createRecipe`, `updateRecipe`, `deleteRecipe`, `suggestRecipe`, `searchImages`
+- [x] Crear `src/api/categories.ts` — función `getCategories()`
+- [x] Crear `src/hooks/useRecipes.ts`:
+  - [x] `useRecipes(filters)` — `useQuery(['recipes', filters], ...)`
+  - [x] `useRecipe(id)` — `useQuery(['recipe', id], ...)`
+  - [x] `useCreateRecipe()`, `useUpdateRecipe()`, `useDeleteRecipe()` — `useMutation` con `invalidateQueries`
 
 ### Componentes reutilizables
-- [ ] Crear `src/components/RecipeCard.tsx`
-  - [ ] `<Card>` MUI con imagen (con fallback si no hay URL)
-  - [ ] Nombre y subcategoría
-  - [ ] Macros resumen (kcal, prot, hc, fat) en `<Chip>` pequeños
-  - [ ] Botones editar/eliminar (iconos) visibles en hover (`CardActions`)
-- [ ] Crear `src/components/ImageCarousel.tsx`
-  - [ ] Fila horizontal scrollable (`display: flex, overflowX: auto`)
-  - [ ] Estado "seleccionada" (borde con color primario al hacer click)
-  - [ ] `<Skeleton>` mientras carga Unsplash
-- [ ] Crear `src/components/MacroProgressBar.tsx`
-  - [ ] 4 `<LinearProgress>` con label: kcal, prot, hc, fat
-  - [ ] Colores distintos por macro (`color` prop o `sx`)
-  - [ ] Mostrar valor actual / objetivo debajo de cada barra
+- [x] Crear `src/components/RecipeCard.tsx`
+  - [x] `<Card>` MUI con imagen (con fallback si no hay URL)
+  - [x] Nombre y subcategoría
+  - [x] Macros resumen (kcal, prot, hc, fat) en `<Chip>` pequeños
+  - [x] Botones editar/eliminar (iconos) visibles en hover (`CardActions`)
+- [x] Crear `src/components/ImageCarousel.tsx`
+  - [x] Fila horizontal scrollable (`display: flex, overflowX: auto`)
+  - [x] Estado "seleccionada" (borde con color primario al hacer click)
+  - [x] `<Skeleton>` mientras carga Unsplash
+- [x] Crear `src/components/MacroProgressBar.tsx`
+  - [x] 4 `<LinearProgress>` con label: kcal, prot, hc, fat
+  - [x] Colores distintos por macro (`color` prop o `sx`)
+  - [x] Mostrar valor actual / objetivo debajo de cada barra
 
 ### Vista principal de recetas
-- [ ] Crear `src/views/RecipesView.tsx`
-  - [ ] Grid MUI responsivo de `<RecipeCard>` (`xs=12 sm=6 md=4 lg=3`)
-  - [ ] Chips de filtro horizontal (categorías) — `<Box sx={{ overflowX: 'auto' }}>` con `<Chip>`
-  - [ ] Sub-chips de subcategoría (aparecen al seleccionar categoría)
-  - [ ] `<TextField>` de búsqueda por nombre (con debounce ~300ms)
-  - [ ] `<Fab>` (+) en posición fija esquina inferior derecha
-  - [ ] Empty state con `<Typography>` + icono si no hay recetas
-  - [ ] `<Skeleton>` grid mientras carga (usar `isLoading` de TanStack Query)
+- [x] Crear `src/views/RecipesView.tsx`
+  - [x] Grid MUI responsivo de `<RecipeCard>` (`xs=12 sm=6 md=4 lg=3`)
+  - [x] Chips de filtro horizontal (categorías) — `<Box sx={{ overflowX: 'auto' }}>` con `<Chip>`
+  - [x] Sub-chips de subcategoría (aparecen al seleccionar categoría)
+  - [x] `<TextField>` de búsqueda por nombre (con debounce ~300ms)
+  - [x] `<SpeedDial>` con acciones en posición fija esquina inferior derecha
+  - [x] Empty state con `<Typography>` + icono si no hay recetas
+  - [x] `<Skeleton>` grid mientras carga (usar `isLoading` de TanStack Query)
 
 ### Formulario de receta
-- [ ] Crear `src/views/RecipeForm.tsx` (como `<Dialog>` fullScreen en móvil, modal en escritorio)
-  - [ ] Campos: nombre (`<TextField>`), categoría (`<Select>`), subcategoría (`<Select>`), raciones
-  - [ ] Campo instrucciones (`<TextField multiline rows={4}>`)
-  - [ ] Sección ingredientes dinámica (array con `useState`):
-    - [ ] Botón "Añadir ingrediente" → añade fila con (nombre, cantidad en gramos)
-    - [ ] Botón eliminar por fila (`<IconButton>`)
-    - [ ] Mínimo 1 ingrediente para poder guardar
-  - [ ] Sección imagen:
-    - [ ] Botón "Buscar imágenes" → llama a `searchImages` → muestra `<ImageCarousel>`
-    - [ ] `<TextField>` URL manual como alternativa
-  - [ ] Botón "Guardar" → llama a `createRecipe`/`updateRecipe` → `<Snackbar>` con macros calculados
-  - [ ] Modo edición: recibe `recipe` como prop opcional (pre-rellena `useForm` con `defaultValues`)
-  - [ ] Usar `react-hook-form` para validación y gestión del formulario
+- [x] Crear `src/views/RecipeForm.tsx` (como `<Dialog>` fullScreen en móvil, modal en escritorio)
+  - [x] Campos: nombre (`<TextField>`), categoría (`<Select>`), subcategoría (`<Select>`), raciones
+  - [x] Campo instrucciones (`<TextField multiline rows={4}>`)
+  - [x] Sección ingredientes dinámica (array con `useFieldArray`):
+    - [x] Botón "Añadir ingrediente" → añade fila con (nombre, cantidad en gramos)
+    - [x] Botón eliminar por fila (`<IconButton>`)
+    - [x] Mínimo 1 ingrediente para poder guardar
+  - [x] Sección imagen:
+    - [x] Botón "Buscar imágenes" → llama a `searchImages` → muestra `<ImageCarousel>`
+    - [x] `<TextField>` URL manual como alternativa
+  - [x] Botón "Guardar" → llama a `createRecipe`/`updateRecipe` → `<Snackbar>` con resultado
+  - [x] Modo edición: recibe `recipe` como prop opcional (pre-rellena `useForm` con `defaultValues`)
+  - [x] Usar `react-hook-form` para validación y gestión del formulario
 
 ### Despensa Virtual
-- [ ] Botón "Sugerir receta" junto al FAB (SpeedDial o segundo botón)
-- [ ] `<Dialog>`: input de ingredientes disponibles (chips añadibles con `<TextField>` + Enter)
-- [ ] Botón "Sugerir" → llama a `suggestRecipe` → `<CircularProgress>` mientras espera
-- [ ] Resultado: abre `<RecipeForm>` pre-rellenado con los datos de GPT
-- [ ] Usuario revisa y puede editar antes de guardar
+- [x] Botón "Sugerir receta" junto al FAB (SpeedDial con dos acciones)
+- [x] `<Dialog>`: input de ingredientes disponibles (chips añadibles con `<TextField>` + Enter)
+- [x] Botón "Sugerir" → llama a `suggestRecipe` → `<CircularProgress>` mientras espera
+- [x] Resultado: abre `<RecipeForm>` pre-rellenado con los datos de GPT
+- [x] Usuario revisa y puede editar antes de guardar
 
 ---
 
@@ -291,43 +291,43 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Duración estimada:** 2-3 sesiones
 
 ### Tipos, API layer y hooks
-- [ ] Crear `src/types/menu.ts` — interfaces `MenuWeek`, `MenuDay`, `MenuSlot`, `SlotType`, `DayMacrosSummary`
-- [ ] Crear `src/types/extra.ts` — interfaces `Extra`, `MenuDayExtra`
-- [ ] Crear `src/api/menu.ts` — funciones: `getWeeks`, `getWeek(weekStart)`, `createWeek`, `updateSlot`, `autofill`, `addExtra`, `removeExtra`
-- [ ] Crear `src/api/extras.ts` — funciones: `getExtras`, `createExtra`, `updateExtra`, `deleteExtra`
-- [ ] Crear `src/hooks/useMenu.ts`:
-  - [ ] `useWeek(weekStart)` — `useQuery(['menu', weekStart], ...)`
-  - [ ] `useUpdateSlot()` — `useMutation` con invalidate de `['menu', weekStart]`
-  - [ ] `useAutofill(weekStart)` — `useMutation` con invalidate de la semana
+- [x] Crear `src/types/menu.ts` — interfaces `MenuWeek`, `MenuDay`, `MenuSlot`, `SlotType`, `DayMacrosSummary`
+- [x] Crear `src/types/extra.ts` — interfaces `Extra`, `MenuDayExtra`
+- [x] Crear `src/api/menu.ts` — funciones: `getWeeks`, `getWeek(weekStart)`, `createWeek`, `updateSlot`, `autofill`, `addExtra`, `removeExtra`
+- [x] Crear `src/api/extras.ts` — funciones: `getExtras`, `createExtra`, `updateExtra`, `deleteExtra`
+- [x] Crear `src/hooks/useMenu.ts`:
+  - [x] `useWeek(weekStart)` — `useQuery(['menu', weekStart], ...)`
+  - [x] `useUpdateSlot()` — `useMutation` con invalidate de `['menu', weekStart]`
+  - [x] `useAutofill(weekStart)` — `useMutation` con invalidate de la semana
 
 ### Vista principal del menú
-- [ ] Crear `src/views/MenuView.tsx`
-  - [ ] Cabecera con: semana actual (ej: "3-7 Jun 2025"), `<IconButton>` flechas ← →
-  - [ ] Grid 5 columnas (L-V) × 5 filas (slots) con MUI `<Table>` o CSS Grid — apilado en móvil (`xs`)
-  - [ ] Cada celda: nombre receta truncado + kcal, o botón "+" si vacía
-  - [ ] Click en celda → abre `<RecipeSelectorDialog>`
-  - [ ] Click en celda con receta → menú contextual: cambiar / quitar (`<Menu>` MUI)
-  - [ ] Botón "Rellenar huecos" → llama a `useAutofill` → `<CircularProgress>` mientras procesa
-  - [ ] Click en cabecera de día → abre `<DayDetailDialog>`
-  - [ ] `<LinearProgress>` de % kcal bajo cada columna de día
+- [x] Crear `src/views/MenuView.tsx`
+  - [x] Cabecera con: semana actual (ej: "3-7 Jun 2025"), `<IconButton>` flechas ← →
+  - [x] Grid 5 columnas (L-V) × 5 filas (slots) con MUI `<Table>` o CSS Grid — apilado en móvil (`xs`)
+  - [x] Cada celda: nombre receta truncado + kcal, o botón "+" si vacía
+  - [x] Click en celda → abre `<RecipeSelectorDialog>`
+  - [x] Click en celda con receta → menú contextual: cambiar / quitar (`<Menu>` MUI)
+  - [x] Botón "Rellenar huecos" → llama a `useAutofill` → `<CircularProgress>` mientras procesa
+  - [x] Click en cabecera de día → abre `<DayDetailDialog>`
+  - [x] `<LinearProgress>` de % kcal bajo cada columna de día
 
 ### Selector de receta
-- [ ] Crear `src/components/RecipeSelectorDialog.tsx` (`<Dialog>`)
-  - [ ] `<TextField>` búsqueda de recetas por nombre
-  - [ ] Filtro por categoría compatible con el `SlotType` seleccionado
-  - [ ] Lista de resultados: nombre + kcal + chips de macros
-  - [ ] Click en resultado → llama a `useUpdateSlot` y cierra el dialog
+- [x] Crear `src/components/RecipeSelectorDialog.tsx` (`<Dialog>`)
+  - [x] `<TextField>` búsqueda de recetas por nombre
+  - [x] Filtro por categoría compatible con el `SlotType` seleccionado
+  - [x] Lista de resultados: nombre + kcal + chips de macros
+  - [x] Click en resultado → llama a `useUpdateSlot` y cierra el dialog
 
 ### Detalle de día
-- [ ] Crear `src/views/DayDetailView.tsx` (como `<Dialog>` fullScreen)
-  - [ ] Título con fecha del día
-  - [ ] Lista de slots: `<List>` con nombre slot + nombre receta + macros
-  - [ ] `<MacroProgressBar>` con totales del día vs objetivo del perfil
-  - [ ] Sección "Extras del día":
-    - [ ] Lista de extras añadidos con cantidad y macros (`<List>`)
-    - [ ] Botón "+" → `<Dialog>` con lista de extras predefinidos
-    - [ ] Stepper de cantidad por extra (`<IconButton>` - / +)
-    - [ ] `<MacroProgressBar>` se recalcula automáticamente al mutar (TanStack Query invalida)
+- [x] Crear `src/views/DayDetailView.tsx` (como `<Dialog>` fullScreen)
+  - [x] Título con fecha del día
+  - [x] Lista de slots: `<List>` con nombre slot + nombre receta + macros
+  - [x] `<MacroProgressBar>` con totales del día vs objetivo del perfil
+  - [x] Sección "Extras del día":
+    - [x] Lista de extras añadidos con cantidad y macros (`<List>`)
+    - [x] Botón "+" → `<Dialog>` con lista de extras predefinidos
+    - [x] Stepper de cantidad por extra (`<IconButton>` - / +)
+    - [x] `<MacroProgressBar>` se recalcula automáticamente al mutar (TanStack Query invalida)
 
 ---
 
@@ -338,33 +338,33 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Duración estimada:** 1-2 sesiones
 
 ### Tipos, API layer y hooks
-- [ ] Crear `src/types/profile.ts` — interfaces `Profile`, `ActivityLevel`, `Goal`, `TdeePreview`
-- [ ] Crear `src/api/profile.ts` — funciones: `getProfile`, `updateProfile`, `calculateTdee`
-- [ ] Crear `src/hooks/useProfile.ts`:
-  - [ ] `useProfile()` — `useQuery(['profile'], ...)`
-  - [ ] `useUpdateProfile()` — `useMutation` con invalidate de `['profile']`
-  - [ ] `useCalculateTdee()` — `useMutation` para preview sin guardar
+- [x] Crear `src/types/profile.ts` — interfaces `Profile`, `ActivityLevel`, `Goal`, `TdeePreview`
+- [x] Crear `src/api/profile.ts` — funciones: `getProfile`, `updateProfile`, `calculateTdee`
+- [x] Crear `src/hooks/useProfile.ts`:
+  - [x] `useProfile()` — `useQuery(['profile'], ...)`
+  - [x] `useUpdateProfile()` — `useMutation` con invalidate de `['profile']`
+  - [x] `useCalculateTdee()` — `useMutation` para preview sin guardar
 
 ### Vista de Ajustes
-- [ ] Crear `src/views/SettingsView.tsx` (como `<Dialog>` fullScreen o ruta dedicada `/settings`)
-- [ ] **Sección Perfil y Objetivos**
-  - [ ] Campos peso/altura/edad con `<TextField type="number">`
-  - [ ] Selector género (`<RadioGroup>`: Hombre / Mujer)
-  - [ ] Selector nivel de actividad (`<Select>` con 5 opciones)
-  - [ ] Selector objetivo (`<ToggleButtonGroup>`: Déficit / Mantenimiento / Superávit)
-  - [ ] Preview TDEE en tiempo real: `useCalculateTdee` con `useDebouncedCallback` (500ms)
-  - [ ] `<Slider>` para ratio de macros prot/hc/fat + `<Typography>` con la suma
-  - [ ] Validación: los 3 porcentajes deben sumar 100% (mostrar error con `<Alert>`)
-  - [ ] Botón "Guardar perfil" → `useUpdateProfile`
-- [ ] **Sección Categorías**
-  - [ ] `<List>` de categorías con botones editar/eliminar (`<IconButton>`)
-  - [ ] `<Collapse>` al expandir → lista de subcategorías editables inline
-  - [ ] Botón "Nueva categoría" → `<TextField>` inline con confirmación
-  - [ ] Botón "Nueva subcategoría" por cada categoría
-- [ ] **Sección Extras Rápidos**
-  - [ ] `<List>` de extras predefinidos con macros
-  - [ ] Botón editar/eliminar por extra
-  - [ ] Formulario "Nuevo extra" con `<TextField>` para nombre, kcal, prot, hc, fat
+- [x] Crear `src/views/SettingsView.tsx` (como `<Dialog>` fullScreen o ruta dedicada `/settings`)
+- [x] **Sección Perfil y Objetivos**
+  - [x] Campos peso/altura/edad con `<TextField type="number">`
+  - [x] Selector género (`<RadioGroup>`: Hombre / Mujer)
+  - [x] Selector nivel de actividad (`<Select>` con 5 opciones)
+  - [x] Selector objetivo (`<ToggleButtonGroup>`: Déficit / Mantenimiento / Superávit)
+  - [x] Preview TDEE en tiempo real: `useCalculateTdee` con `useDebouncedCallback` (500ms)
+  - [x] `<Slider>` para ratio de macros prot/hc/fat + `<Typography>` con la suma
+  - [x] Validación: los 3 porcentajes deben sumar 100% (mostrar error con `<Alert>`)
+  - [x] Botón "Guardar perfil" → `useUpdateProfile`
+- [x] **Sección Categorías**
+  - [x] `<List>` de categorías con botones editar/eliminar (`<IconButton>`)
+  - [x] `<Collapse>` al expandir → lista de subcategorías editables inline
+  - [x] Botón "Nueva categoría" → `<TextField>` inline con confirmación
+  - [x] Botón "Nueva subcategoría" por cada categoría
+- [x] **Sección Extras Rápidos**
+  - [x] `<List>` de extras predefinidos con macros
+  - [x] Botón editar/eliminar por extra
+  - [x] Formulario "Nuevo extra" con `<TextField>` para nombre, kcal, prot, hc, fat
 
 ---
 
@@ -375,13 +375,13 @@ FASE 9  [          ] 0%   Polish & Testing
 > **Duración estimada:** 1-2 sesiones
 
 ### Robustez
-- [ ] Interceptor global de errores en `src/api/client.ts` → extrae mensaje de FastAPI y lanza `Error`
+- [x] Interceptor global de errores en `src/api/client.ts` → extrae mensaje de FastAPI y lanza `Error`
 - [ ] `onError` global en `QueryClient` → muestra `<Snackbar>` con el mensaje de error
-- [ ] Loading states en TODAS las queries y mutations (`isLoading`, `isPending`)
-- [ ] Empty states con mensajes útiles en: listado de recetas, días del menú vacíos
+- [x] Loading states en TODAS las queries y mutations (`isLoading`, `isPending`)
+- [x] Empty states con mensajes útiles en: listado de recetas, días del menú vacíos
 - [ ] Validaciones completas en todos los formularios con `react-hook-form`:
-  - [ ] Receta: nombre obligatorio, mínimo 1 ingrediente, cantidades > 0
-  - [ ] Perfil: peso/altura/edad en rangos razonables, porcentajes suman 100%
+  - [x] Receta: nombre obligatorio, mínimo 1 ingrediente, cantidades > 0
+  - [x] Perfil: peso/altura/edad en rangos razonables, porcentajes suman 100%
   - [ ] Extras: nombre obligatorio, kcal > 0
 
 ### Caché de ingredientes (mejora USDA + traducción)

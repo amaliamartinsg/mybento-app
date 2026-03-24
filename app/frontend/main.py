@@ -1,11 +1,11 @@
-"""Flet entry point for PyPlanner frontend."""
+"""Flet entry point for MyBento frontend."""
 
 import flet as ft
 
 
 def main(page: ft.Page) -> None:
-    """Initialize the PyPlanner application window."""
-    page.title = "PyPlanner"
+    """Initialize the MyBento application window."""
+    page.title = "MyBento"
     page.window_width = 1200
     page.window_height = 800
     page.window_min_width = 800
@@ -16,7 +16,7 @@ def main(page: ft.Page) -> None:
         ft.Column(
             controls=[
                 ft.Text(
-                    "PyPlanner",
+                    "MyBento",
                     size=32,
                     weight=ft.FontWeight.BOLD,
                 ),

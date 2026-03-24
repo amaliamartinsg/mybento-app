@@ -36,6 +36,7 @@ class RecipeCreate(BaseModel):
     subcategory_id: int | None = None
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int = Field(default=1, ge=1)
     ingredients: list[IngredientInput] = Field(min_length=1)
 
@@ -47,6 +48,7 @@ class RecipeUpdate(BaseModel):
     subcategory_id: int | None = None
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientInput] | None = None
 
@@ -59,6 +61,7 @@ class RecipeRead(BaseModel):
     subcategory_id: int | None
     instructions_text: str | None
     image_url: str | None
+    external_url: str | None
     servings: int
     kcal: float
     prot_g: float

@@ -179,7 +179,7 @@ code --install-extension qwtel.sqlite-viewer
 
 ```json
 {
-  "name": "pyplanner-frontend",
+  "name": "MyBento-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {

@@ -1,4 +1,4 @@
-"""FastAPI entry point for PyPlanner backend."""
+"""FastAPI entry point for MyBento backend."""
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="PyPlanner API",
+    title="MyBento API",
     description="Backend para la aplicación de gestión de recetas y menús semanales.",
     version="0.1.0",
     lifespan=lifespan,

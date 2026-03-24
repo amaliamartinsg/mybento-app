@@ -26,6 +26,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import { useDebounce } from 'use-debounce'
 import { useQuery } from '@tanstack/react-query'
 import RecipeCard from '../components/RecipeCard'
+import RecipeDetailDialog from '../components/RecipeDetailDialog'
 import RecipeForm from './RecipeForm'
 import { useRecipes, useDeleteRecipe } from '../hooks/useRecipes'
 import { getCategories } from '../api/categories'
@@ -64,6 +65,7 @@ function RecipesView() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
+  const [detailRecipe, setDetailRecipe] = useState<Recipe | null>(null)
 
   // Despensa Virtual state
   const [pantryOpen, setPantryOpen] = useState(false)
@@ -178,50 +180,128 @@ function RecipesView() {
   })
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
-      {/* Search */}
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="Buscar recetas..."
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        sx={{ mb: 2 }}
-      />
+    <Box sx={{ p: 3, pb: 10 }}>
+      {/* Search bar */}
+      <Box sx={{ position: 'relative', mb: 4 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 16,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#6a769e',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
+        </Box>
+        <TextField
+          fullWidth
+          placeholder="Buscar recetas saludables..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              pl: 6,
+              py: 0.5,
+              bgcolor: '#eef2ff',
+              borderRadius: '16px',
+              '& fieldset': { border: 'none' },
+              '&.Mui-focused fieldset': { border: '2px solid #4da8ff' },
+            },
+          }}
+        />
+      </Box>
 
       {/* Category chips */}
-      <Box sx={{ overflowX: 'auto', display: 'flex', gap: 1, pb: 1, mb: 1 }}>
+      <Box
+        sx={{
+          overflowX: 'auto',
+          display: 'flex',
+          gap: 1.5,
+          pb: 1,
+          mb: 1,
+          mx: -3,
+          px: 3,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
         {categories.map((cat) => (
-          <Chip
+          <Box
             key={cat.id}
-            label={cat.name}
+            component="button"
             onClick={() => handleCategoryClick(cat.id)}
-            color={selectedCategoryId === cat.id ? 'primary' : 'default'}
-            variant={selectedCategoryId === cat.id ? 'filled' : 'outlined'}
-            sx={{ flexShrink: 0 }}
-          />
+            sx={{
+              flexShrink: 0,
+              bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#e8eeff',
+              color: selectedCategoryId === cat.id ? 'white' : '#44464f',
+              px: 3,
+              py: 1.25,
+              borderRadius: 100,
+              fontSize: 14,
+              fontWeight: selectedCategoryId === cat.id ? 700 : 600,
+              fontFamily: '"Inter", sans-serif',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              letterSpacing: '0.02em',
+              '&:hover': {
+                bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#dde3f0',
+              },
+            }}
+          >
+            {cat.name}
+          </Box>
         ))}
       </Box>
 
       {/* Subcategory chips */}
       {selectedCategory && selectedCategory.subcategories.length > 0 && (
-        <Box sx={{ overflowX: 'auto', display: 'flex', gap: 1, pb: 1, mb: 2 }}>
+        <Box
+          sx={{
+            overflowX: 'auto',
+            display: 'flex',
+            gap: 1,
+            pb: 1,
+            mb: 3,
+            mx: -3,
+            px: 3,
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
+        >
           {selectedCategory.subcategories.map((sub) => (
-            <Chip
+            <Box
               key={sub.id}
-              label={sub.name}
-              size="small"
+              component="button"
               onClick={() => handleSubcategoryClick(sub.id)}
-              color={selectedSubcategoryId === sub.id ? 'secondary' : 'default'}
-              variant={selectedSubcategoryId === sub.id ? 'filled' : 'outlined'}
-              sx={{ flexShrink: 0 }}
-            />
+              sx={{
+                flexShrink: 0,
+                bgcolor: selectedSubcategoryId === sub.id ? '#5071d5' : '#e8eeff',
+                color: selectedSubcategoryId === sub.id ? 'white' : '#44464f',
+                px: 2,
+                py: 0.75,
+                borderRadius: 100,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: '"Inter", sans-serif',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {sub.name}
+            </Box>
           ))}
         </Box>
       )}
 
       {/* Recipe grid */}
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {isLoading ? (
           <SkeletonGrid />
         ) : recipes.length === 0 ? (
@@ -250,6 +330,7 @@ function RecipesView() {
                 subcategoryName={recipe.subcategory_id ? subcategoryMap[recipe.subcategory_id] : undefined}
                 onEdit={handleEdit}
                 onDelete={setDeleteTarget}
+                onView={setDetailRecipe}
               />
             </Grid>
           ))
@@ -259,7 +340,18 @@ function RecipesView() {
       {/* FAB SpeedDial */}
       <SpeedDial
         ariaLabel="Acciones de receta"
-        sx={{ position: 'fixed', bottom: 72, right: 16 }}
+        sx={{
+          position: 'fixed',
+          bottom: 88,
+          right: 20,
+          '& .MuiFab-primary': {
+            bgcolor: '#005cb2',
+            '&:hover': { bgcolor: '#004090' },
+            borderRadius: '16px',
+            width: 56,
+            height: 56,
+          },
+        }}
         icon={<SpeedDialIcon openIcon={<AddIcon />} />}
       >
         <SpeedDialAction
@@ -273,6 +365,14 @@ function RecipesView() {
           onClick={() => setPantryOpen(true)}
         />
       </SpeedDial>
+
+      {/* Recipe detail dialog */}
+      <RecipeDetailDialog
+        open={Boolean(detailRecipe)}
+        recipe={detailRecipe}
+        onClose={() => setDetailRecipe(null)}
+        onEdit={(r) => { setDetailRecipe(null); handleEdit(r) }}
+      />
 
       {/* Recipe form dialog */}
       <RecipeForm

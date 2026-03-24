@@ -5,7 +5,7 @@
 ## Estructura de Directorios
 
 ```
-pyplanner/                             # Raíz del proyecto
+MyBento/                             # Raíz del proyecto
 │
 ├── planning/                          # ← Esta carpeta (documentación)
 ├── .env                               # API keys — NUNCA subir a git
