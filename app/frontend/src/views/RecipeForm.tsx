@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 import AddIcon from '@mui/icons-material/Add'
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -25,7 +28,8 @@ import Typography from '@mui/material/Typography'
 import ImageCarousel from '../components/ImageCarousel'
 import { useCreateRecipe, useUpdateRecipe } from '../hooks/useRecipes'
 import { searchImages } from '../api/recipes'
-import type { Recipe, RecipeCreate, RecipeSuggestion } from '../types/recipe'
+import { lookupUnitWeight, createUnitWeight } from '../api/unitWeights'
+import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion } from '../types/recipe'
 import type { Category } from '../types/category'
 
 // ─── Shared label style ───────────────────────────────────────────────────────
@@ -61,6 +65,10 @@ interface RecipeFormValues {
   image_url: string
   external_url: string
   ingredients: { name: string; quantity_g: number }[]
+  kcal: number
+  prot_g: number
+  hc_g: number
+  fat_g: number
 }
 
 interface RecipeFormProps {
@@ -70,6 +78,10 @@ interface RecipeFormProps {
   prefill?: RecipeSuggestion | null
   categories: Category[]
 }
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Unit = 'g' | 'kg' | 'ud'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -82,6 +94,13 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const [carouselError, setCarouselError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [showImagePicker, setShowImagePicker] = useState(false)
+  const [ingredientUnits, setIngredientUnits] = useState<Unit[]>(['g'])
+  const [unitWeightDialog, setUnitWeightDialog] = useState<{
+    open: boolean
+    ingredientIndex: number
+    ingredientName: string
+    gramsInput: string
+  } | null>(null)
 
   const {
     control,
@@ -100,6 +119,10 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       image_url: '',
       external_url: '',
       ingredients: [{ name: '', quantity_g: 100 }],
+      kcal: 0,
+      prot_g: 0,
+      hc_g: 0,
+      fat_g: 0,
     },
   })
 
@@ -120,6 +143,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     setShowImagePicker(false)
 
     if (prefill) {
+      const prefillIngredients = prefill.ingredients.map((i) => ({ name: i.name, quantity_g: i.quantity_g }))
       reset({
         name: prefill.name,
         subcategory_id: '',
@@ -127,8 +151,9 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         instructions_text: prefill.instructions_text,
         image_url: '',
         external_url: '',
-        ingredients: prefill.ingredients.map((i) => ({ name: i.name, quantity_g: i.quantity_g })),
+        ingredients: prefillIngredients,
       })
+      setIngredientUnits(Array(prefillIngredients.length).fill('g'))
       setSelectedCategoryId('')
       return
     }
@@ -138,6 +163,10 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       const cat = subcat
         ? categories.find((c) => c.subcategories.some((s) => s.id === subcat))
         : null
+      const recipeIngredients =
+        recipe.ingredients.length > 0
+          ? recipe.ingredients.map((i) => ({ name: i.name, quantity_g: i.quantity_g }))
+          : [{ name: '', quantity_g: 100 }]
       reset({
         name: recipe.name,
         subcategory_id: subcat !== null ? String(subcat) : '',
@@ -145,11 +174,13 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         instructions_text: recipe.instructions_text ?? '',
         image_url: recipe.image_url ?? '',
         external_url: recipe.external_url ?? '',
-        ingredients:
-          recipe.ingredients.length > 0
-            ? recipe.ingredients.map((i) => ({ name: i.name, quantity_g: i.quantity_g }))
-            : [{ name: '', quantity_g: 100 }],
+        ingredients: recipeIngredients,
+        kcal: recipe.kcal,
+        prot_g: recipe.prot_g,
+        hc_g: recipe.hc_g,
+        fat_g: recipe.fat_g,
       })
+      setIngredientUnits(Array(recipeIngredients.length).fill('g'))
       setSelectedCategoryId(cat ? String(cat.id) : '')
       return
     }
@@ -163,6 +194,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       external_url: '',
       ingredients: [{ name: '', quantity_g: 100 }],
     })
+    setIngredientUnits(['g'])
     setSelectedCategoryId('')
   }, [open, recipe, prefill, categories, reset])
 
@@ -188,25 +220,70 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     }
   }
 
+  const handleUnitChange = async (index: number, newUnit: Unit) => {
+    const units = [...ingredientUnits]
+    units[index] = newUnit
+    setIngredientUnits(units)
+
+    if (newUnit === 'ud') {
+      const ingName = watch(`ingredients.${index}.name`).trim()
+      if (ingName) {
+        const found = await lookupUnitWeight(ingName)
+        if (!found) {
+          setUnitWeightDialog({
+            open: true,
+            ingredientIndex: index,
+            ingredientName: ingName,
+            gramsInput: '',
+          })
+        }
+        // If found, do nothing — the quantity_g will be computed at submit time
+      }
+    }
+  }
+
   const onSubmit = async (values: RecipeFormValues) => {
     setSubmitError(null)
-    const payload: RecipeCreate = {
+
+    // Convert quantities to grams based on units
+    const convertedIngredients = await Promise.all(
+      values.ingredients.map(async (ing, index) => {
+        const unit = ingredientUnits[index] ?? 'g'
+        let quantity_g = Number(ing.quantity_g)
+        if (unit === 'kg') {
+          quantity_g = quantity_g * 1000
+        } else if (unit === 'ud') {
+          const found = await lookupUnitWeight(ing.name.trim())
+          if (found) {
+            quantity_g = quantity_g * found.grams_per_unit
+          }
+          // If not found, use quantity as-is (shouldn't happen if dialog was shown)
+        }
+        return { name: ing.name.trim(), quantity_g }
+      })
+    )
+
+    const basePayload = {
       name: values.name.trim(),
       subcategory_id: values.subcategory_id ? Number(values.subcategory_id) : null,
       servings: values.servings,
       instructions_text: values.instructions_text.trim() || null,
       image_url: values.image_url.trim() || null,
       external_url: values.external_url.trim() || null,
-      ingredients: values.ingredients.map((i) => ({
-        name: i.name.trim(),
-        quantity_g: Number(i.quantity_g),
-      })),
+      ingredients: convertedIngredients,
     }
     try {
       if (recipe) {
-        await updateRecipe.mutateAsync({ id: recipe.id, payload })
+        const updatePayload: RecipeUpdate = {
+          ...basePayload,
+          kcal: Number(values.kcal),
+          prot_g: Number(values.prot_g),
+          hc_g: Number(values.hc_g),
+          fat_g: Number(values.fat_g),
+        }
+        await updateRecipe.mutateAsync({ id: recipe.id, payload: updatePayload })
       } else {
-        await createRecipe.mutateAsync(payload)
+        await createRecipe.mutateAsync(basePayload as RecipeCreate)
       }
       onClose(true)
     } catch (e) {
@@ -578,12 +655,30 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                       min={1}
                       {...register(`ingredients.${index}.quantity_g`, { required: true, min: 1, valueAsNumber: true })}
                     />
-                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#6a769e' }}>g</Typography>
+                    <select
+                      value={ingredientUnits[index] ?? 'g'}
+                      onChange={(e) => handleUnitChange(index, e.target.value as Unit)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        fontFamily: '"Inter", sans-serif',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        color: '#6a769e',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        padding: 0,
+                      }}
+                    >
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ud">ud.</option>
+                    </select>
                   </Box>
                   {/* Delete */}
                   <IconButton
                     size="small"
-                    onClick={() => remove(index)}
+                    onClick={() => { remove(index); setIngredientUnits(u => u.filter((_, i) => i !== index)) }}
                     disabled={fields.length === 1}
                     sx={{
                       color: fields.length === 1 ? '#c3c7d0' : '#ba1a1a',
@@ -606,7 +701,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
             <Button
               fullWidth
               startIcon={<AddIcon />}
-              onClick={() => append({ name: '', quantity_g: 100 })}
+              onClick={() => { append({ name: '', quantity_g: 100 }); setIngredientUnits(u => [...u, 'g']) }}
               sx={{
                 mt: 2,
                 py: 1.75,
@@ -622,6 +717,56 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
               Añadir ingrediente
             </Button>
           </Box>
+
+          {/* ── Macros (edit mode only) ── */}
+          {recipe && (
+            <Box sx={{ mb: 4 }}>
+              <Typography sx={fieldLabel}>Macros por receta</Typography>
+              <Box
+                sx={{
+                  bgcolor: 'background.paper',
+                  borderRadius: '20px',
+                  p: 2.5,
+                  border: '1px solid rgba(195,199,208,0.3)',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 2,
+                }}
+              >
+                {([
+                  ['kcal', 'kcal', '#5071d5'],
+                  ['prot_g', 'Proteínas (g)', '#1565C0'],
+                  ['hc_g', 'Hidratos (g)', '#F57F17'],
+                  ['fat_g', 'Grasas (g)', '#C62828'],
+                ] as const).map(([field, label, color]) => (
+                  <Box key={field}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5 }}>
+                      {label}
+                    </Typography>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      {...register(field, { valueAsNumber: true, min: 0 })}
+                      style={{
+                        width: '100%',
+                        border: '1px solid rgba(195,199,208,0.4)',
+                        borderRadius: 12,
+                        background: '#f8f9ff',
+                        fontFamily: '"Inter", sans-serif',
+                        fontWeight: 700,
+                        fontSize: 15,
+                        color,
+                        outline: 'none',
+                        padding: '10px 14px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
 
           {/* ── Instructions ── */}
           <Box sx={{ mb: 4 }}>
@@ -718,6 +863,53 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
           </Button>
         </Box>
       </Box>
+
+      {/* Unit weight definition dialog */}
+      <Dialog
+        open={Boolean(unitWeightDialog?.open)}
+        onClose={() => setUnitWeightDialog(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 700 }}>
+          Definir peso por unidad
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2, fontSize: 14, color: 'text.secondary' }}>
+            ¿Cuántos gramos pesa 1 unidad de <strong>{unitWeightDialog?.ingredientName}</strong>?
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            type="number"
+            label="Gramos por unidad"
+            value={unitWeightDialog?.gramsInput ?? ''}
+            onChange={(e) =>
+              setUnitWeightDialog((d) => d ? { ...d, gramsInput: e.target.value } : null)
+            }
+            inputProps={{ min: 1, step: 0.5 }}
+            size="small"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnitWeightDialog(null)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            disabled={!unitWeightDialog?.gramsInput || parseFloat(unitWeightDialog.gramsInput) <= 0}
+            onClick={async () => {
+              if (!unitWeightDialog) return
+              await createUnitWeight({
+                ingredient_name: unitWeightDialog.ingredientName,
+                grams_per_unit: parseFloat(unitWeightDialog.gramsInput),
+              })
+              setUnitWeightDialog(null)
+            }}
+            sx={{ borderRadius: 100 }}
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   )
 }

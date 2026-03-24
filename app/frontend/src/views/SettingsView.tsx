@@ -33,11 +33,11 @@ import {
   updateCategory,
   updateSubcategory,
 } from '../api/categories'
-import { createExtra, deleteExtra, getExtras, updateExtra } from '../api/extras'
 import { getProfile, updateProfile, calculateTdee } from '../api/profile'
+import { getUnitWeights, createUnitWeight, updateUnitWeight, deleteUnitWeight } from '../api/unitWeights'
 import type { Category, SubCategory } from '../types/category'
-import type { Extra } from '../types/extra'
 import type { ActivityLevel, Goal, Profile } from '../types/profile'
+import type { UnitWeight } from '../types/unitWeight'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -606,151 +606,196 @@ function CategoriesSection() {
   )
 }
 
-// ─── Extras Section ───────────────────────────────────────────────────────────
+// ─── Unit Weights Section ─────────────────────────────────────────────────────
 
-interface ExtraFormState {
-  name: string; kcal: string; prot_g: string; hc_g: string; fat_g: string
-}
-
-const EMPTY_EXTRA_FORM: ExtraFormState = { name: '', kcal: '', prot_g: '0', hc_g: '0', fat_g: '0' }
-
-function ExtrasSection() {
+function UnitWeightsSection() {
   const queryClient = useQueryClient()
-  const { data: extras, isLoading } = useQuery({ queryKey: ['extras'], queryFn: getExtras })
-  const [form, setForm] = useState<ExtraFormState>(EMPTY_EXTRA_FORM)
+  const { data: unitWeights, isLoading } = useQuery({ queryKey: ['unit-weights'], queryFn: getUnitWeights })
+
+  const [newIngredientName, setNewIngredientName] = useState('')
+  const [newGramsPerUnit, setNewGramsPerUnit] = useState('')
+  const [addingNew, setAddingNew] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [showForm, setShowForm] = useState(false)
+  const [editingGrams, setEditingGrams] = useState('')
 
-  function openAdd() { setEditingId(null); setForm(EMPTY_EXTRA_FORM); setShowForm(true) }
-  function openEdit(extra: Extra) {
-    setEditingId(extra.id)
-    setForm({ name: extra.name, kcal: String(extra.kcal), prot_g: String(extra.prot_g), hc_g: String(extra.hc_g), fat_g: String(extra.fat_g) })
-    setShowForm(true)
-  }
-  function invalidate() { queryClient.invalidateQueries({ queryKey: ['extras'] }) }
+  function invalidate() { queryClient.invalidateQueries({ queryKey: ['unit-weights'] }) }
 
-  const saveMutation = useMutation({
-    mutationFn: () => {
-      const payload = { name: form.name.trim(), kcal: parseFloat(form.kcal), prot_g: parseFloat(form.prot_g) || 0, hc_g: parseFloat(form.hc_g) || 0, fat_g: parseFloat(form.fat_g) || 0 }
-      return editingId !== null ? updateExtra(editingId, payload) : createExtra(payload)
+  const addMutation = useMutation({
+    mutationFn: () =>
+      createUnitWeight({
+        ingredient_name: newIngredientName.trim(),
+        grams_per_unit: parseFloat(newGramsPerUnit),
+      }),
+    onSuccess: () => {
+      invalidate()
+      setNewIngredientName('')
+      setNewGramsPerUnit('')
+      setAddingNew(false)
     },
-    onSuccess: () => { invalidate(); setShowForm(false); setForm(EMPTY_EXTRA_FORM); setEditingId(null) },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (uw: UnitWeight) =>
+      updateUnitWeight(uw.id, { grams_per_unit: parseFloat(editingGrams) }),
+    onSuccess: () => { invalidate(); setEditingId(null) },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteExtra(id),
+    mutationFn: (id: number) => deleteUnitWeight(id),
     onSuccess: () => invalidate(),
   })
 
-  const formValid = form.name.trim().length > 0 && !isNaN(parseFloat(form.kcal)) && parseFloat(form.kcal) > 0
+  const canAdd =
+    newIngredientName.trim().length > 0 &&
+    newGramsPerUnit.trim().length > 0 &&
+    parseFloat(newGramsPerUnit) > 0
 
   return (
     <Box component="section" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography sx={sectionTitle}>Extras Rápidos</Typography>
+        <Typography sx={sectionTitle}>Pesos por Unidad</Typography>
         <Button
           size="small"
           startIcon={<AddIcon />}
-          onClick={openAdd}
+          onClick={() => setAddingNew(true)}
+          disabled={addingNew}
           sx={{ bgcolor: 'rgba(0,130,253,0.08)', color: '#4da8ff', borderRadius: 100, px: 2, fontWeight: 700, '&:hover': { bgcolor: 'rgba(0,130,253,0.15)' } }}
         >
-          Añadir
+          Nueva
         </Button>
       </Box>
 
-      {showForm && (
-        <Box sx={{ ...sectionCard, border: '1px solid #eef2ff' }}>
-          <Typography sx={{ fontWeight: 700, mb: 2, fontFamily: '"Inter", sans-serif' }}>
-            {editingId ? 'Editar extra' : 'Nuevo extra'}
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <TextField label="Nombre" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} size="small" fullWidth autoFocus />
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {([['kcal', 'kcal'], ['prot_g', 'Prot (g)'], ['hc_g', 'HC (g)'], ['fat_g', 'Grasas (g)']] as const).map(([key, label]) => (
-                <TextField
-                  key={key}
-                  label={label}
-                  type="number"
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  size="small"
-                  inputProps={{ min: 0, step: 0.5 }}
-                  sx={{ flex: 1, minWidth: 80 }}
-                />
-              ))}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={() => saveMutation.mutate()}
-                disabled={!formValid || saveMutation.isPending}
-                startIcon={saveMutation.isPending ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}
-                sx={{ borderRadius: 100 }}
-              >
-                Guardar
-              </Button>
-              <Button size="small" onClick={() => { setShowForm(false); setEditingId(null) }} sx={{ borderRadius: 100 }}>Cancelar</Button>
-            </Box>
-          </Box>
+      {addingNew && (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            bgcolor: 'background.paper',
+            p: 2,
+            borderRadius: '16px',
+          }}
+        >
+          <TextField
+            value={newIngredientName}
+            onChange={(e) => setNewIngredientName(e.target.value)}
+            size="small"
+            placeholder="Ingrediente (ej: Huevo)"
+            autoFocus
+            sx={{ flex: 2, minWidth: 140, '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: '10px' } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && canAdd) addMutation.mutate()
+              if (e.key === 'Escape') setAddingNew(false)
+            }}
+          />
+          <TextField
+            value={newGramsPerUnit}
+            onChange={(e) => setNewGramsPerUnit(e.target.value)}
+            size="small"
+            type="number"
+            placeholder="g/ud."
+            inputProps={{ min: 0.1, step: 0.5 }}
+            sx={{ flex: 1, minWidth: 80, '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: '10px' } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && canAdd) addMutation.mutate()
+              if (e.key === 'Escape') setAddingNew(false)
+            }}
+          />
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => addMutation.mutate()}
+            disabled={!canAdd || addMutation.isPending}
+            sx={{ borderRadius: 100 }}
+          >
+            Crear
+          </Button>
+          <Button size="small" onClick={() => setAddingNew(false)} sx={{ borderRadius: 100 }}>
+            Cancelar
+          </Button>
         </Box>
       )}
 
-      {isLoading && <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress size={28} /></Box>}
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+          <CircularProgress size={28} />
+        </Box>
+      )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {extras?.map((extra) => (
-          <Box
-            key={extra.id}
-            sx={{
-              bgcolor: 'background.paper',
-              borderRadius: '16px',
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              '&:hover .extra-actions': { opacity: 1 },
-            }}
-          >
+      <Box sx={sectionCard}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {unitWeights?.length === 0 && (
+            <Typography sx={{ color: '#6a769e', fontSize: 14 }}>
+              No hay pesos definidos. Crea el primero.
+            </Typography>
+          )}
+          {unitWeights?.map((uw) => (
             <Box
+              key={uw.id}
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                bgcolor: '#eef2ff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 22,
-                flexShrink: 0,
+                justifyContent: 'space-between',
+                py: 1,
+                px: 2,
+                bgcolor: '#f0f4ff',
+                borderRadius: '12px',
+                gap: 1,
               }}
             >
-              🥗
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 700, color: '#1a1c1e' }}>{extra.name}</Typography>
-              <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#5071d5' }}>
-                  {Math.round(extra.kcal)} kcal
+              <Typography sx={{ fontWeight: 600, color: '#1a1c1e', flex: 2, fontSize: 14 }}>
+                {uw.ingredient_name}
+              </Typography>
+              {editingId === uw.id ? (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+                  <TextField
+                    value={editingGrams}
+                    onChange={(e) => setEditingGrams(e.target.value)}
+                    size="small"
+                    type="number"
+                    inputProps={{ min: 0.1, step: 0.5 }}
+                    autoFocus
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: '10px' } }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && parseFloat(editingGrams) > 0) updateMutation.mutate(uw)
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                  />
+                  <Button
+                    size="small"
+                    onClick={() => updateMutation.mutate(uw)}
+                    disabled={!editingGrams || parseFloat(editingGrams) <= 0 || updateMutation.isPending}
+                    sx={{ borderRadius: 100 }}
+                  >
+                    OK
+                  </Button>
+                </Box>
+              ) : (
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#4da8ff', minWidth: 56, textAlign: 'right' }}>
+                  {uw.grams_per_unit} g/ud.
                 </Typography>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#1565C0' }}>P: {Math.round(extra.prot_g)}g</Typography>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#F57F17' }}>HC: {Math.round(extra.hc_g)}g</Typography>
-                <Typography sx={{ fontSize: 10, fontWeight: 700, color: '#C62828' }}>G: {Math.round(extra.fat_g)}g</Typography>
+              )}
+              <Box sx={{ display: 'flex', gap: 0.25 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => { setEditingId(uw.id); setEditingGrams(String(uw.grams_per_unit)) }}
+                  sx={{ color: '#6a769e' }}
+                >
+                  <EditIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => deleteMutation.mutate(uw.id)}
+                  disabled={deleteMutation.isPending}
+                  sx={{ color: '#6a769e', '&:hover': { color: '#ba1a1a' } }}
+                >
+                  <DeleteIcon sx={{ fontSize: 16 }} />
+                </IconButton>
               </Box>
             </Box>
-            <Box className="extra-actions" sx={{ display: 'flex', gap: 0.5, opacity: 0, transition: 'opacity 0.2s' }}>
-              <IconButton size="small" onClick={() => openEdit(extra)} sx={{ color: '#6a769e' }}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={() => deleteMutation.mutate(extra.id)} disabled={deleteMutation.isPending} sx={{ color: '#6a769e', '&:hover': { color: '#ba1a1a' } }}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </Box>
-        ))}
-        {extras?.length === 0 && !isLoading && (
-          <Typography sx={{ color: '#6a769e', fontSize: 14 }}>No hay extras definidos.</Typography>
-        )}
+          ))}
+        </Box>
       </Box>
     </Box>
   )
@@ -767,7 +812,7 @@ function SettingsView() {
       {error && <Alert severity="error" sx={{ borderRadius: 3 }}>{(error as Error).message}</Alert>}
       {profile && <ProfileSection profile={profile} />}
       <CategoriesSection />
-      <ExtrasSection />
+      <UnitWeightsSection />
     </Box>
   )
 }
