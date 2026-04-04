@@ -13,6 +13,7 @@ load_dotenv()
 class Settings:
     openai_api_key: str
     assemblyai_api_key: str
+    service_api_key: str
     openai_model: str
     keywords: tuple[str, ...]
 
@@ -20,6 +21,7 @@ class Settings:
 def load_settings() -> Settings:
     openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
     assemblyai_api_key = os.getenv("ASSEMBLYAI_API_KEY", "").strip()
+    service_api_key = os.getenv("SERVICE_API_KEY", "").strip()
     openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini").strip()
     keywords_raw = os.getenv("KEYWORDS", "ingrediente")
     keywords = tuple(
@@ -30,12 +32,15 @@ def load_settings() -> Settings:
         raise ValueError("Falta OPENAI_API_KEY en el entorno.")
     if not assemblyai_api_key:
         raise ValueError("Falta ASSEMBLYAI_API_KEY en el entorno.")
+    if not service_api_key:
+        raise ValueError("Falta SERVICE_API_KEY en el entorno.")
     if not keywords:
         raise ValueError("La lista KEYWORDS no puede estar vacia.")
 
     return Settings(
         openai_api_key=openai_api_key,
         assemblyai_api_key=assemblyai_api_key,
+        service_api_key=service_api_key,
         openai_model=openai_model,
         keywords=keywords,
     )

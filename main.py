@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import asdict
 
 from src.config import load_settings
 from src.pipeline import run_pipeline
@@ -32,8 +33,9 @@ def main() -> None:
         "source_type": result.source_type,
         "matched_keywords": result.matched_keywords,
         "caption": result.caption,
+        "web_text": result.web_text,
         "transcript": result.transcript,
-        "processed_text": result.processed_text,
+        "recipe": asdict(result.recipe),
         "output_dir": str(result.output_dir.resolve()),
         "media_url_found": bool(result.media.media_url),
         "media_id": result.media.media_id,
