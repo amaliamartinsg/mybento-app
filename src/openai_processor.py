@@ -1,18 +1,36 @@
 from __future__ import annotations
 
+import json
+
 from openai import OpenAI
 
 
-SYSTEM_PROMPT = """Procesa el texto recibido de Instagram.
+SYSTEM_PROMPT = """Extrae una receta estructurada a partir del texto recibido.
 
-Devuelve una respuesta breve y util para automatizacion con este formato:
-- resumen: 1-3 frases
-- categoria: etiqueta corta
-- entidades_clave: lista simple
-- acciones_recomendadas: lista simple
+Debes devolver exclusivamente JSON valido, sin markdown ni explicaciones.
 
-Si el texto habla de ingredientes, identifica ingredientes concretos y contexto de uso.
-Si faltan datos, no inventes informacion.
+Formato exacto:
+{
+  "titulo_receta": "string",
+  "ingredientes": [
+    {
+      "nombre": "string",
+      "cantidad": "string",
+      "unidad": "string",
+      "cantidad_normalizada": "string"
+    }
+  ],
+  "instrucciones": ["string"]
+}
+
+Reglas:
+- Usa solo informacion explicitamente presente en el texto.
+- Si una cantidad no aparece y el ingrediente no es una especia, usa "N/D" en "cantidad", "unidad" y "cantidad_normalizada".
+- Si una especia no tiene cantidad explicita, usa cantidad "1", unidad "g" y cantidad_normalizada "1 g".
+- Considera como especias tipicas ingredientes como pimienta, pimenton, comino, curry, oregano, canela, nuez moscada, ajo en polvo, cebolla en polvo, cayena, chile en polvo y mezclas equivalentes.
+- Si el titulo no aparece claro, deducelo solo si el texto lo deja muy claro. Si no, usa "N/D".
+- Las instrucciones deben quedar en pasos claros y concisos, en orden.
+- Si hay variantes o notas ambiguas, no inventes cantidades.
 """
 
 
@@ -24,8 +42,13 @@ def process_text(api_key: str, model: str, text: str, source: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": f"Fuente: {source}\n\nTexto a procesar:\n{text}",
+                "content": (
+                    f"Fuente: {source}\n\n"
+                    "Extrae la receta completa a partir del siguiente contenido:\n"
+                    f"{text}"
+                ),
             },
         ],
     )
-    return response.output_text.strip()
+    parsed = json.loads(response.output_text)
+    return json.dumps(parsed, ensure_ascii=False, indent=2)

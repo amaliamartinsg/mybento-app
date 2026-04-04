@@ -34,6 +34,7 @@ def main() -> None:
         "caption": result.caption,
         "transcript": result.transcript,
         "processed_text": result.processed_text,
+        "output_dir": str(result.output_dir.resolve()),
         "media_url_found": bool(result.media.media_url),
         "media_id": result.media.media_id,
         "extractor": result.media.extractor,
