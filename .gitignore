@@ -98,3 +98,7 @@ test_*.py
 analyze_*.py
 generate.py
 output.md
+
+
+#Added 
+outputs/

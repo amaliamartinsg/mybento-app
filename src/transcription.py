@@ -23,14 +23,22 @@ def transcribe_with_assemblyai(
     post_url: str,
     media_url: str | None,
 ) -> tuple[str, str]:
+    remote_error: str | None = None
     if media_url:
         try:
             transcript = _transcribe_remote_media(api_key, media_url)
             return transcript, "assemblyai_remote_url"
-        except TranscriptionError:
-            pass
+        except TranscriptionError as exc:
+            remote_error = str(exc)
 
-    transcript = _transcribe_local_fallback(api_key, post_url)
+    try:
+        transcript = _transcribe_local_fallback(api_key, post_url)
+    except TranscriptionError as exc:
+        if remote_error:
+            raise TranscriptionError(
+                f"Fallo remoto: {remote_error} | Fallo local: {exc}"
+            ) from exc
+        raise
     return transcript, "assemblyai_local_upload"
 
 

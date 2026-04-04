@@ -5,7 +5,8 @@ Pipeline en Python para procesar un reel o post publico de Instagram:
 1. Extrae el `caption` del post.
 2. Si el caption contiene alguna palabra clave configurable, envia ese texto a OpenAI.
 3. Si no hay coincidencia, obtiene el media del post y lo transcribe con AssemblyAI.
-4. El resultado final tambien se envia a OpenAI para su procesamiento.
+4. El resultado final se procesa con OpenAI para extraer la receta en JSON.
+5. Guarda artefactos del proceso en una carpeta por video.
 
 ## Requisitos
 
@@ -41,3 +42,8 @@ python main.py "https://www.instagram.com/reel/xxxxxxxxxxx/"
 - Si una keyword aparece en el caption, no se transcribe el video.
 - Si no aparece, se intenta transcripcion remota con la URL directa del media.
 - Si AssemblyAI no puede leer esa URL, se descarga temporalmente el media y se reintenta con subida local.
+- Cada ejecucion crea una carpeta dentro de `outputs/` con:
+- `caption.txt`
+- `transcripcion.txt` si se genero transcripcion
+- `receta.json`
+- `metadata.json`
