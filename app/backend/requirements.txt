@@ -1,4 +1,3 @@
-# Backend-only dependencies (sin Flet, que es la UI de escritorio ya reemplazada por React)
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 sqlmodel>=0.0.18

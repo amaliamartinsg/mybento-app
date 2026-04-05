@@ -22,8 +22,10 @@ API en Python con FastAPI para procesar un reel o post publico de Instagram o un
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env
 ```
+
+Este servicio no mantiene un `.env` propio en esta carpeta.
+Las variables se definen en el `.env` global de la raiz del repositorio (`mybento-app/.env`).
 
 ## Ejecutar API
 
@@ -41,12 +43,10 @@ Construir imagen:
 docker build -t recipe-ingestion-api .
 ```
 
-Ejecutar contenedor:
+Ejecucion recomendada en este proyecto:
 
 ```bash
-docker run --rm -p 8001:8001 ^
-  --env-file .env ^
-  recipe-ingestion-api
+docker compose up --build -d
 ```
 
 Notas:
@@ -54,15 +54,7 @@ Notas:
 - El contenedor instala `ffmpeg` para el fallback de transcripcion local.
 - Los artefactos se guardan dentro de `outputs/` en el contenedor.
 - El rate limit diario se guarda en `data/rate_limits.db` dentro del contenedor.
-- Si quieres persistir ambos fuera del contenedor, monta volumen para `outputs/` y para `data/`:
-
-```bash
-docker run --rm -p 8001:8001 ^
-  --env-file .env ^
-  -v %cd%\outputs:/app/outputs ^
-  -v %cd%\data:/app/data ^
-  recipe-ingestion-api
-```
+- En esta app esos volumenes y variables se gestionan desde el `docker-compose.yml` global.
 
 ## Uso
 
@@ -126,7 +118,8 @@ Si OpenAI no tiene cuota o limita la peticion, la API devolvera `503` para difer
 
 ## Docker Compose
 
-Tambien puedes levantar el servicio con `docker compose` usando [docker-compose.yml](C:\scripts\kairo-project\reels-transcribe\docker-compose.yml):
+Este servicio se levanta desde el `docker-compose.yml` de la raiz del repo:
+[../docker-compose.yml](../docker-compose.yml)
 
 ```bash
 docker compose up --build -d
@@ -140,7 +133,7 @@ docker compose down
 
 Este compose:
 
-- carga variables desde `.env`
+- carga variables desde el `.env` global en la raiz del repo
 - expone el puerto `8001`
 - persiste `outputs/`
 - persiste `data/rate_limits.db`
