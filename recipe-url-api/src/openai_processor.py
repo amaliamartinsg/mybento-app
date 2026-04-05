@@ -27,7 +27,10 @@ Reglas:
 - Usa solo informacion explicitamente presente en el texto.
 - Si no aparece el nombre claro de la receta, usa "N/D".
 - Si no aparece el numero de raciones, usa null en "servings".
-- "instructions_text" debe contener todos los pasos concatenados como un texto claro y ordenado.
+- "instructions_text" debe contener todos los pasos numerados, uno por línea, con el formato exacto:
+  1. {paso 1}
+  2. {paso 2}
+  Cada paso debe ir separado por un salto de línea (\n). No uses otro formato ni añadas texto extra fuera de los pasos.
 - Convierte cantidades a gramos siempre que sea razonable segun lo dicho en el texto.
 - Si una cantidad no aparece y el ingrediente no es una especia, usa null en "quantity_g".
 - Si una especia no tiene cantidad explicita, usa 1 en "quantity_g".
