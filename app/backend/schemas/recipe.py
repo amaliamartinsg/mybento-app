@@ -107,6 +107,25 @@ class RecipeSuggestion(BaseModel):
     ingredients: list[RecipeSuggestionIngredient] = []
 
 
+class ScrapeRequest(BaseModel):
+    """Payload para solicitar extracción de receta desde una URL externa."""
+
+    url: str
+
+
+class ScrapedRecipe(BaseModel):
+    """Datos de receta extraídos de una URL por el servicio de scraping externo.
+
+    Todos los campos son opcionales salvo ``name`` — el extractor puede no
+    disponer de raciones, instrucciones o ingredientes según la fuente.
+    """
+
+    name: str
+    servings: int | None = None
+    instructions_text: str | None = None
+    ingredients: list[RecipeSuggestionIngredient] = []
+
+
 class RecipeSummary(BaseModel):
     """Lightweight recipe representation for list views and menu slot display."""
 

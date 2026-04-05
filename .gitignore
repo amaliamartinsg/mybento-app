@@ -35,6 +35,7 @@ Thumbs.db
 
 #Added
 .claude/
+CLAUDE.md
 
 # Frontend React
 app/frontend/node_modules/

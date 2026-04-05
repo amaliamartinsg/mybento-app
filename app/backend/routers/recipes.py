@@ -21,11 +21,18 @@ from app.backend.schemas.recipe import (
     RecipeSuggestion,
     RecipeSummary,
     RecipeUpdate,
+    ScrapedRecipe,
+    ScrapeRequest,
 )
 from app.backend.services.usda import USDAAuthError, get_nutrition
 from app.backend.services.macro_calculator import calculate_recipe_macros
 from app.backend.services.openai_service import OpenAIAuthError, suggest_recipe
 from app.backend.services.unsplash import UnsplashAuthError, search_images
+from app.backend.services.scraper import (
+    ScraperAuthError,
+    ScraperRateLimitError,
+    scrape_recipe_from_url,
+)
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -343,6 +350,54 @@ def delete_recipe(recipe_id: int) -> None:
 
         session.delete(recipe)
         session.commit()
+
+
+# ---------------------------------------------------------------------------
+# POST /recipes/scrape  — Extract recipe from external URL
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/scrape",
+    response_model=ScrapedRecipe,
+    summary="Extraer receta desde URL externa",
+)
+async def scrape_recipe_endpoint(payload: ScrapeRequest) -> ScrapedRecipe:
+    """Call the external scraper service to extract recipe data from a URL.
+
+    The returned :class:`ScrapedRecipe` is a draft for the user to review
+    and edit before saving. It is **not** persisted automatically.
+
+    Args:
+        payload: Object containing the URL to scrape.
+
+    Raises:
+        HTTPException 403: If the scraper API key is invalid.
+        HTTPException 429: If the daily rate limit is exceeded.
+        HTTPException 504: If the scraper service times out.
+        HTTPException 502: If the scraper service returns any other error.
+    """
+    try:
+        result = await scrape_recipe_from_url(payload.url)
+    except ScraperAuthError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+    except ScraperRateLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        detail = str(exc)
+        status_code = (
+            status.HTTP_504_GATEWAY_TIMEOUT
+            if "tardó demasiado" in detail
+            else status.HTTP_502_BAD_GATEWAY
+        )
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+    return result
 
 
 # ---------------------------------------------------------------------------

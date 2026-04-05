@@ -25,6 +25,9 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         transition: 'box-shadow 0.2s',
         cursor: 'pointer',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.12)' },
         '&:hover .recipe-actions': { opacity: 1 },
       }}
@@ -113,7 +116,7 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
       </Box>
 
       {/* Card content */}
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {subcategoryName && (
           <Typography
             sx={{

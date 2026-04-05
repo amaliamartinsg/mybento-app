@@ -65,6 +65,13 @@ export interface RecipeSuggestion {
   ingredients: IngredientInput[]
 }
 
+export interface ScrapedRecipe {
+  name: string
+  servings?: number | null
+  instructions_text?: string | null
+  ingredients: IngredientInput[]
+}
+
 export interface RecipeFilters {
   category_id?: number
   subcategory_id?: number

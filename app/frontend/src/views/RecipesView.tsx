@@ -355,7 +355,7 @@ function RecipesView() {
           </Grid>
         ) : (
           recipes.map((recipe) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={recipe.id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={recipe.id} sx={{ display: 'flex' }}>
               <RecipeCard
                 recipe={recipe}
                 subcategoryName={recipe.subcategory_id ? subcategoryMap[recipe.subcategory_id] : undefined}

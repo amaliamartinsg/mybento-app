@@ -70,7 +70,8 @@ function App() {
               sx={{
                 height: 28,
                 cursor: 'pointer',
-                filter: 'brightness(0) invert(1)',
+                filter: 'invert(1)',
+                mixBlendMode: 'screen',
                 userSelect: 'none',
                 transition: 'opacity 0.15s',
                 '&:hover': { opacity: 0.85 },

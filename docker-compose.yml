@@ -8,6 +8,8 @@ services:
       USDA_API_KEY: ${USDA_API_KEY}
       UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SCRAPER_API_URL: ${SCRAPER_API_URL}
+      SCRAPER_API_KEY: ${SCRAPER_API_KEY}
     volumes:
       - db_data:/data
     expose:
@@ -27,7 +29,7 @@ services:
       args:
         VITE_BACKEND_URL: /api
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       backend:
         condition: service_healthy

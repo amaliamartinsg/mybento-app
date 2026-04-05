@@ -6,6 +6,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import AddIcon from '@mui/icons-material/Add'
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
 import GroupsIcon from '@mui/icons-material/Groups'
@@ -26,9 +27,9 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import ImageCarousel from '../components/ImageCarousel'
 import { useCreateRecipe, useUpdateRecipe } from '../hooks/useRecipes'
-import { searchImages } from '../api/recipes'
+import { searchImages, scrapeRecipe } from '../api/recipes'
 import { lookupUnitWeight, createUnitWeight } from '../api/unitWeights'
-import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion, MealType } from '../types/recipe'
+import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion, MealType, ScrapedRecipe } from '../types/recipe'
 import type { Category } from '../types/category'
 
 // ─── Shared label style ───────────────────────────────────────────────────────
@@ -93,6 +94,8 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const [carouselLoading, setCarouselLoading] = useState(false)
   const [carouselError, setCarouselError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [scrapeLoading, setScrapeLoading] = useState(false)
+  const [scrapeError, setScrapeError] = useState<string | null>(null)
   const [showImagePicker, setShowImagePicker] = useState(false)
   const [ingredientUnits, setIngredientUnits] = useState<Unit[]>(['g'])
   const [unitWeightDialog, setUnitWeightDialog] = useState<{
@@ -127,11 +130,12 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     },
   })
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'ingredients' })
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'ingredients' })
 
   const selectedImageUrl = watch('image_url')
   const recipeName = watch('name')
   const servings = watch('servings')
+  const watchedExternalUrl = watch('external_url')
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
 
@@ -140,6 +144,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     setCarouselImages([])
     setCarouselError(null)
     setSubmitError(null)
+    setScrapeError(null)
     setShowImagePicker(false)
 
     if (prefill) {
@@ -209,6 +214,32 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId) ?? null
   const isComidaCategory = selectedCategory?.name.toLowerCase() === 'comida'
   const watchedMealType = watch('meal_type')
+
+  const handleScrapeUrl = async () => {
+    const url = watchedExternalUrl.trim()
+    if (!url) return
+    setScrapeLoading(true)
+    setScrapeError(null)
+    try {
+      const scraped: ScrapedRecipe = await scrapeRecipe(url)
+      setValue('name', scraped.name)
+      if (scraped.servings) setValue('servings', scraped.servings)
+      if (scraped.instructions_text) setValue('instructions_text', scraped.instructions_text)
+      if (scraped.ingredients && scraped.ingredients.length > 0) {
+        const validIngredients = scraped.ingredients
+          .filter((i) => i.name)
+          .map((i) => ({ name: i.name, quantity_g: i.quantity_g ?? 100 }))
+        if (validIngredients.length > 0) {
+          replace(validIngredients)
+          setIngredientUnits(Array(validIngredients.length).fill('g'))
+        }
+      }
+    } catch (e) {
+      setScrapeError((e as Error).message)
+    } finally {
+      setScrapeLoading(false)
+    }
+  }
 
   const handleSearchImages = async () => {
     const query = recipeName.trim() || 'comida saludable'
@@ -843,22 +874,57 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
           {/* ── External link ── */}
           <Box sx={{ mb: 4 }}>
             <Typography sx={fieldLabel}>Enlace externo</Typography>
-            <TextField
-              fullWidth
-              placeholder="https://..."
-              {...register('external_url')}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.paper',
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+              <TextField
+                fullWidth
+                placeholder="https://..."
+                {...register('external_url')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                    borderRadius: '16px',
+                    fontFamily: '"Lexend", sans-serif',
+                    '& fieldset': { border: '1px solid rgba(195,199,208,0.4)' },
+                    '&:hover fieldset': { border: '1px solid rgba(104,84,141,0.3)' },
+                    '&.Mui-focused fieldset': { border: '2px solid rgba(104,84,141,0.5)' },
+                  },
+                }}
+                inputProps={{ style: { fontFamily: '"Lexend", sans-serif', fontWeight: 400, padding: '16px 20px' } }}
+              />
+              <Button
+                onClick={handleScrapeUrl}
+                disabled={scrapeLoading || !watchedExternalUrl.trim()}
+                startIcon={
+                  scrapeLoading
+                    ? <CircularProgress size={16} color="inherit" />
+                    : <AutoFixHighIcon />
+                }
+                sx={{
+                  minWidth: 120,
+                  height: 56,
                   borderRadius: '16px',
-                  fontFamily: '"Lexend", sans-serif',
-                  '& fieldset': { border: '1px solid rgba(195,199,208,0.4)' },
-                  '&:hover fieldset': { border: '1px solid rgba(104,84,141,0.3)' },
-                  '&.Mui-focused fieldset': { border: '2px solid rgba(104,84,141,0.5)' },
-                },
-              }}
-              inputProps={{ style: { fontFamily: '"Lexend", sans-serif', fontWeight: 400, padding: '16px 20px' } }}
-            />
+                  fontFamily: '"Inter", sans-serif',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  background: scrapeLoading
+                    ? '#c3c7d0'
+                    : 'linear-gradient(135deg, #7c5cbf 0%, #4a2d8a 100%)',
+                  color: 'white',
+                  boxShadow: scrapeLoading ? 'none' : '0 4px 14px rgba(104,84,141,0.35)',
+                  '&:hover': { background: 'linear-gradient(135deg, #8f6fd4 0%, #5a3da0 100%)' },
+                  '&.Mui-disabled': { background: '#c3c7d0', color: 'white' },
+                }}
+              >
+                {scrapeLoading ? 'Generando…' : 'Generar'}
+              </Button>
+            </Box>
+            {scrapeError && (
+              <Alert severity="error" sx={{ mt: 1.5, borderRadius: 2, fontFamily: '"Inter", sans-serif' }}>
+                {scrapeError}
+              </Alert>
+            )}
           </Box>
 
           {submitError && (
