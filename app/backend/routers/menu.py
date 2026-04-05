@@ -53,6 +53,11 @@ def _compute_day_macros(day: MenuDay) -> DayMacrosSummary:
             prot_g += slot.recipe.prot_g
             hc_g += slot.recipe.hc_g
             fat_g += slot.recipe.fat_g
+        if slot.second_recipe is not None:
+            kcal += slot.second_recipe.kcal
+            prot_g += slot.second_recipe.prot_g
+            hc_g += slot.second_recipe.hc_g
+            fat_g += slot.second_recipe.fat_g
 
     for de in day.day_extras:
         kcal += de.extra.kcal * de.quantity
@@ -73,7 +78,15 @@ def _build_slot_read(slot: MenuSlot) -> SlotRead:
     recipe_summary = (
         RecipeSummary.model_validate(slot.recipe) if slot.recipe is not None else None
     )
-    return SlotRead(id=slot.id, slot_type=slot.slot_type, recipe=recipe_summary)
+    second_recipe_summary = (
+        RecipeSummary.model_validate(slot.second_recipe) if slot.second_recipe is not None else None
+    )
+    return SlotRead(
+        id=slot.id,
+        slot_type=slot.slot_type,
+        recipe=recipe_summary,
+        second_recipe=second_recipe_summary,
+    )
 
 
 def _build_menu_week_read(week: MenuWeek) -> MenuWeekRead:
@@ -123,6 +136,7 @@ def _load_week_relationships(week: MenuWeek) -> None:
     for day in week.days:
         for slot in day.slots:
             _ = slot.recipe  # noqa: F841 — triggers lazy load
+            _ = slot.second_recipe  # noqa: F841
         for de in day.day_extras:
             _ = de.extra  # noqa: F841
 
@@ -294,18 +308,38 @@ def update_slot(slot_id: int, payload: SlotUpdate) -> SlotRead:
                     detail=f"Receta con id={payload.recipe_id} no encontrada",
                 )
 
+        if payload.second_recipe_id is not None:
+            second = session.get(Recipe, payload.second_recipe_id)
+            if second is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Receta con id={payload.second_recipe_id} no encontrada",
+                )
+
         slot.recipe_id = payload.recipe_id
+        slot.second_recipe_id = payload.second_recipe_id
         session.add(slot)
         session.commit()
         session.refresh(slot)
 
         recipe_summary: RecipeSummary | None = None
         if slot.recipe_id is not None:
-            recipe = session.get(Recipe, slot.recipe_id)
-            if recipe is not None:
-                recipe_summary = RecipeSummary.model_validate(recipe)
+            r = session.get(Recipe, slot.recipe_id)
+            if r is not None:
+                recipe_summary = RecipeSummary.model_validate(r)
 
-        return SlotRead(id=slot.id, slot_type=slot.slot_type, recipe=recipe_summary)
+        second_recipe_summary: RecipeSummary | None = None
+        if slot.second_recipe_id is not None:
+            r2 = session.get(Recipe, slot.second_recipe_id)
+            if r2 is not None:
+                second_recipe_summary = RecipeSummary.model_validate(r2)
+
+        return SlotRead(
+            id=slot.id,
+            slot_type=slot.slot_type,
+            recipe=recipe_summary,
+            second_recipe=second_recipe_summary,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -335,9 +369,10 @@ def clear_slot(slot_id: int) -> SlotRead:
                 detail=f"Slot con id={slot_id} no encontrado",
             )
         slot.recipe_id = None
+        slot.second_recipe_id = None
         session.add(slot)
         session.commit()
-        return SlotRead(id=slot.id, slot_type=slot.slot_type, recipe=None)
+        return SlotRead(id=slot.id, slot_type=slot.slot_type, recipe=None, second_recipe=None)
 
 
 # ---------------------------------------------------------------------------
@@ -400,11 +435,11 @@ def autofill_menu(week_start: date) -> MenuWeekRead:
         assignments = autofill_week(week, list(recipes), target)
 
         for assignment in assignments:
-            if assignment.recipe_id is not None:
-                slot = session.get(MenuSlot, assignment.slot_id)
-                if slot is not None:
-                    slot.recipe_id = assignment.recipe_id
-                    session.add(slot)
+            slot = session.get(MenuSlot, assignment.slot_id)
+            if slot is not None:
+                slot.recipe_id = assignment.recipe_id
+                slot.second_recipe_id = assignment.second_recipe_id
+                session.add(slot)
 
         session.commit()
         session.refresh(week)

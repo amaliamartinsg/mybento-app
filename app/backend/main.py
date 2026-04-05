@@ -1,4 +1,4 @@
-"""FastAPI entry point for PyPlanner backend."""
+"""FastAPI entry point for MyBento backend."""
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.backend.database import create_db_and_tables
-from app.backend.routers import categories, extras, menu, profile, recipes
+from app.backend.routers import categories, extras, menu, profile, recipes, unit_weights
 
 
 @asynccontextmanager
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="PyPlanner API",
+    title="MyBento API",
     description="Backend para la aplicación de gestión de recetas y menús semanales.",
     version="0.1.0",
     lifespan=lifespan,
@@ -38,6 +38,7 @@ app.include_router(categories.router)
 app.include_router(menu.router)
 app.include_router(extras.router)
 app.include_router(profile.router)
+app.include_router(unit_weights.router)
 
 
 @app.get("/health", tags=["health"])

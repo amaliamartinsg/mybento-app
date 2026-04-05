@@ -1,3 +1,5 @@
+export type MealType = 'plato_unico' | 'primero' | 'segundo'
+
 export interface RecipeIngredient {
   id: number
   recipe_id: number
@@ -18,8 +20,10 @@ export interface Recipe {
   id: number
   name: string
   subcategory_id: number | null
+  meal_type: MealType
   instructions_text: string | null
   image_url: string | null
+  external_url: string | null
   servings: number
   kcal: number
   prot_g: number
@@ -32,8 +36,10 @@ export interface Recipe {
 export interface RecipeCreate {
   name: string
   subcategory_id?: number | null
+  meal_type?: MealType
   instructions_text?: string | null
   image_url?: string | null
+  external_url?: string | null
   servings?: number
   ingredients: IngredientInput[]
 }
@@ -41,15 +47,28 @@ export interface RecipeCreate {
 export interface RecipeUpdate {
   name?: string
   subcategory_id?: number | null
+  meal_type?: MealType
   instructions_text?: string | null
   image_url?: string | null
+  external_url?: string | null
   servings?: number
   ingredients?: IngredientInput[]
+  kcal?: number
+  prot_g?: number
+  hc_g?: number
+  fat_g?: number
 }
 
 export interface RecipeSuggestion {
   name: string
   instructions_text: string
+  ingredients: IngredientInput[]
+}
+
+export interface ScrapedRecipe {
+  name: string
+  servings?: number | null
+  instructions_text?: string | null
   ingredients: IngredientInput[]
 }
 

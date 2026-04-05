@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.backend.models.recipe import MealType
+
 
 class IngredientInput(BaseModel):
     """A single ingredient line sent by the client when creating/updating a recipe."""
@@ -34,21 +36,34 @@ class RecipeCreate(BaseModel):
 
     name: str
     subcategory_id: int | None = None
+    meal_type: MealType = MealType.PLATO_UNICO
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int = Field(default=1, ge=1)
     ingredients: list[IngredientInput] = Field(min_length=1)
 
 
 class RecipeUpdate(BaseModel):
-    """Payload to update an existing Recipe (all fields optional)."""
+    """Payload to update an existing Recipe (all fields optional).
+
+    Macro fields (kcal, prot_g, hc_g, fat_g) allow manual overrides.
+    If ingredients are also provided, manual macros take precedence over
+    the USDA-calculated values.
+    """
 
     name: str | None = None
     subcategory_id: int | None = None
+    meal_type: MealType | None = None
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientInput] | None = None
+    kcal: float | None = Field(default=None, ge=0)
+    prot_g: float | None = Field(default=None, ge=0)
+    hc_g: float | None = Field(default=None, ge=0)
+    fat_g: float | None = Field(default=None, ge=0)
 
 
 class RecipeRead(BaseModel):
@@ -57,8 +72,10 @@ class RecipeRead(BaseModel):
     id: int
     name: str
     subcategory_id: int | None
+    meal_type: MealType
     instructions_text: str | None
     image_url: str | None
+    external_url: str | None
     servings: int
     kcal: float
     prot_g: float
@@ -90,11 +107,31 @@ class RecipeSuggestion(BaseModel):
     ingredients: list[RecipeSuggestionIngredient] = []
 
 
+class ScrapeRequest(BaseModel):
+    """Payload para solicitar extracción de receta desde una URL externa."""
+
+    url: str
+
+
+class ScrapedRecipe(BaseModel):
+    """Datos de receta extraídos de una URL por el servicio de scraping externo.
+
+    Todos los campos son opcionales salvo ``name`` — el extractor puede no
+    disponer de raciones, instrucciones o ingredientes según la fuente.
+    """
+
+    name: str
+    servings: int | None = None
+    instructions_text: str | None = None
+    ingredients: list[RecipeSuggestionIngredient] = []
+
+
 class RecipeSummary(BaseModel):
     """Lightweight recipe representation for list views and menu slot display."""
 
     id: int
     name: str
+    meal_type: MealType
     kcal: float
     prot_g: float
     hc_g: float

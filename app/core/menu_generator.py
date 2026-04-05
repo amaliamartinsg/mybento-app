@@ -8,7 +8,7 @@ import random
 from dataclasses import dataclass, field
 
 from app.backend.models.menu import MenuWeek, SlotType
-from app.backend.models.recipe import Recipe
+from app.backend.models.recipe import MealType, Recipe
 from app.backend.services.macro_calculator import MacroTotals
 
 
@@ -37,10 +37,12 @@ class SlotAssignment:
     Attributes:
         slot_id: Primary key of the MenuSlot to update.
         recipe_id: Recipe to assign, or None to leave the slot empty.
+        second_recipe_id: Second course for Comida primero+segundo pairs.
     """
 
     slot_id: int
     recipe_id: int | None
+    second_recipe_id: int | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +81,7 @@ def filter_compatible_recipes(
     recipes: list[Recipe],
     slot_type: SlotType,
     budget: MacroTotals,
+    meal_type: MealType | None = None,
 ) -> list[Recipe]:
     """Return recipes that are compatible with *slot_type* and fit *budget*.
 
@@ -93,6 +96,7 @@ def filter_compatible_recipes(
         recipes: Full recipe list with ``subcategory.category`` loaded.
         slot_type: The meal slot to fill.
         budget: Available macro budget for this slot.
+        meal_type: If provided, only recipes with this meal_type are returned.
 
     Returns:
         Filtered and sorted list of compatible recipes.
@@ -106,10 +110,23 @@ def filter_compatible_recipes(
         category_name = recipe.subcategory.category.name.lower()
         if category_name != target_category:
             continue
+        if meal_type is not None and recipe.meal_type != meal_type:
+            continue
         if recipe.kcal <= budget.kcal:
             compatible.append(recipe)
 
     return sorted(compatible, key=lambda r: r.kcal)
+
+
+def _all_for_category(recipes: list[Recipe], slot_type: SlotType) -> list[Recipe]:
+    """Return all recipes matching a slot's category, regardless of budget."""
+    target_cat = SLOT_CATEGORY_MAP[slot_type]
+    return [
+        r
+        for r in recipes
+        if r.subcategory is not None
+        and r.subcategory.category.name.lower() == target_cat
+    ]
 
 
 def autofill_week(
@@ -124,9 +141,10 @@ def autofill_week(
     1. Compute macros already consumed (filled slots + extras).
     2. Compute remaining budget = target − consumed.
     3. Filter recipes compatible with the slot type and within budget.
-    4. Pick randomly from compatible recipes.
-    5. If nothing fits, fall back to the lowest-kcal recipe for that category.
-    6. If no recipe exists for the category at all, skip the slot.
+    4. For COMIDA slots: try plato_unico first; if none fit, try primero+segundo pair.
+    5. Pick randomly from compatible recipes.
+    6. If nothing fits, fall back to the lowest-kcal recipe for that category.
+    7. If no recipe exists for the category at all, skip the slot.
 
     Args:
         week: The :class:`MenuWeek` with days/slots/extras fully loaded.
@@ -157,6 +175,11 @@ def autofill_week(
                 consumed.prot_g += slot.recipe.prot_g
                 consumed.hc_g += slot.recipe.hc_g
                 consumed.fat_g += slot.recipe.fat_g
+            if slot.second_recipe_id is not None and slot.second_recipe is not None:
+                consumed.kcal += slot.second_recipe.kcal
+                consumed.prot_g += slot.second_recipe.prot_g
+                consumed.hc_g += slot.second_recipe.hc_g
+                consumed.fat_g += slot.second_recipe.fat_g
 
         # --- Fill empty slots ---
         for slot in day.slots:
@@ -164,29 +187,117 @@ def autofill_week(
                 continue  # already filled — skip
 
             budget = get_slot_macro_budget(consumed, slot.slot_type, target)
-            compatible = filter_compatible_recipes(recipes, slot.slot_type, budget)
 
-            if compatible:
-                chosen = random.choice(compatible)
+            if slot.slot_type == SlotType.COMIDA:
+                assignment = _fill_comida_slot(slot.id, recipes, budget)  # type: ignore[arg-type]
             else:
-                # Fallback: lowest-kcal recipe for this category, ignoring budget
-                target_cat = SLOT_CATEGORY_MAP[slot.slot_type]
-                fallback = [
-                    r
-                    for r in recipes
-                    if r.subcategory is not None
-                    and r.subcategory.category.name.lower() == target_cat
-                ]
-                if not fallback:
-                    continue  # no recipes at all for this category
-                chosen = min(fallback, key=lambda r: r.kcal)
+                assignment = _fill_generic_slot(slot.id, recipes, slot.slot_type, budget)  # type: ignore[arg-type]
 
-            # Account for this choice in the running consumed totals
-            consumed.kcal += chosen.kcal
-            consumed.prot_g += chosen.prot_g
-            consumed.hc_g += chosen.hc_g
-            consumed.fat_g += chosen.fat_g
+            if assignment is None:
+                continue
 
-            assignments.append(SlotAssignment(slot_id=slot.id, recipe_id=chosen.id))  # type: ignore[arg-type]
+            # Account for chosen recipe(s) in running consumed totals
+            if assignment.recipe_id is not None:
+                chosen = next((r for r in recipes if r.id == assignment.recipe_id), None)
+                if chosen:
+                    consumed.kcal += chosen.kcal
+                    consumed.prot_g += chosen.prot_g
+                    consumed.hc_g += chosen.hc_g
+                    consumed.fat_g += chosen.fat_g
+            if assignment.second_recipe_id is not None:
+                second = next((r for r in recipes if r.id == assignment.second_recipe_id), None)
+                if second:
+                    consumed.kcal += second.kcal
+                    consumed.prot_g += second.prot_g
+                    consumed.hc_g += second.hc_g
+                    consumed.fat_g += second.fat_g
+
+            assignments.append(assignment)
 
     return assignments
+
+
+def _fill_comida_slot(
+    slot_id: int,
+    recipes: list[Recipe],
+    budget: MacroTotals,
+) -> SlotAssignment | None:
+    """Choose recipe(s) for a COMIDA slot.
+
+    Preference order:
+    1. A plato_unico that fits the budget.
+    2. A primero + segundo pair whose combined kcal fits the budget.
+    3. Fallback: lowest-kcal plato_unico (ignoring budget).
+    4. Fallback: lowest-kcal primero + lowest-kcal segundo (ignoring budget).
+    5. If no comida recipes exist at all, return None.
+    """
+    all_comida = _all_for_category(recipes, SlotType.COMIDA)
+    if not all_comida:
+        return None
+
+    # --- 1. Try plato_unico within budget ---
+    unicos = filter_compatible_recipes(
+        recipes, SlotType.COMIDA, budget, meal_type=MealType.PLATO_UNICO
+    )
+    if unicos:
+        chosen = random.choice(unicos)
+        return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)
+
+    # --- 2. Try primero + segundo pair within budget ---
+    primeros = [r for r in all_comida if r.meal_type == MealType.PRIMERO]
+    segundos = [r for r in all_comida if r.meal_type == MealType.SEGUNDO]
+
+    if primeros and segundos:
+        # Find valid pairs whose combined kcal fits
+        valid_pairs: list[tuple[Recipe, Recipe]] = [
+            (p, s)
+            for p in primeros
+            for s in segundos
+            if p.kcal + s.kcal <= budget.kcal
+        ]
+        if valid_pairs:
+            chosen_p, chosen_s = random.choice(valid_pairs)
+            return SlotAssignment(
+                slot_id=slot_id,
+                recipe_id=chosen_p.id,
+                second_recipe_id=chosen_s.id,
+            )
+
+    # --- 3. Fallback: lowest-kcal plato_unico (ignore budget) ---
+    unicos_all = [r for r in all_comida if r.meal_type == MealType.PLATO_UNICO]
+    if unicos_all:
+        chosen = min(unicos_all, key=lambda r: r.kcal)
+        return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)
+
+    # --- 4. Fallback: lowest-kcal primero + segundo (ignore budget) ---
+    if primeros and segundos:
+        chosen_p = min(primeros, key=lambda r: r.kcal)
+        chosen_s = min(segundos, key=lambda r: r.kcal)
+        return SlotAssignment(
+            slot_id=slot_id,
+            recipe_id=chosen_p.id,
+            second_recipe_id=chosen_s.id,
+        )
+
+    # --- 5. Any comida recipe as last resort ---
+    chosen = min(all_comida, key=lambda r: r.kcal)
+    return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)
+
+
+def _fill_generic_slot(
+    slot_id: int,
+    recipes: list[Recipe],
+    slot_type: SlotType,
+    budget: MacroTotals,
+) -> SlotAssignment | None:
+    """Choose a single recipe for a non-COMIDA slot."""
+    compatible = filter_compatible_recipes(recipes, slot_type, budget)
+    if compatible:
+        chosen = random.choice(compatible)
+    else:
+        fallback = _all_for_category(recipes, slot_type)
+        if not fallback:
+            return None
+        chosen = min(fallback, key=lambda r: r.kcal)
+
+    return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)

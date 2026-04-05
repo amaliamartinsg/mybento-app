@@ -1,4 +1,4 @@
-"""HTTP client for communicating with the PyPlanner backend."""
+"""HTTP client for communicating with the MyBento backend."""
 
 import os
 from typing import Any
@@ -7,7 +7,7 @@ import httpx
 
 
 class APIClient:
-    """Async HTTP client wrapping the PyPlanner REST API.
+    """Async HTTP client wrapping the MyBento REST API.
 
     All methods raise httpx.HTTPStatusError on non-2xx responses.
     """

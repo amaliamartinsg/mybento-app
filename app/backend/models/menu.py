@@ -68,14 +68,22 @@ class MenuSlot(SQLModel, table=True):
         day_id: FK to the parent MenuDay.
         slot_type: Which meal this slot represents.
         recipe_id: FK to the assigned Recipe; None means the slot is empty.
+        second_recipe_id: FK to a second Recipe for Comida slots with primero+segundo.
         day: Parent MenuDay relationship.
         recipe: Assigned Recipe (nullable).
+        second_recipe: Second course Recipe for Comida slots (nullable).
     """
 
     id: int | None = Field(default=None, primary_key=True)
     day_id: int = Field(foreign_key="menuday.id")
     slot_type: SlotType
     recipe_id: int | None = Field(default=None, foreign_key="recipe.id")
+    second_recipe_id: int | None = Field(default=None, foreign_key="recipe.id")
 
     day: MenuDay = Relationship(back_populates="slots")
-    recipe: Optional[Recipe] = Relationship()
+    recipe: Optional[Recipe] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[MenuSlot.recipe_id]"}
+    )
+    second_recipe: Optional[Recipe] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[MenuSlot.second_recipe_id]"}
+    )

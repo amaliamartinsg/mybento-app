@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react'
 import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Chip from '@mui/material/Chip'
-import Fab from '@mui/material/Fab'
 import Skeleton from '@mui/material/Skeleton'
 import Card from '@mui/material/Card'
 import Snackbar from '@mui/material/Snackbar'
@@ -25,9 +26,11 @@ import RestaurantIcon from '@mui/icons-material/Restaurant'
 import CloseIcon from '@mui/icons-material/Close'
 import { useDebounce } from 'use-debounce'
 import { useQuery } from '@tanstack/react-query'
+import ExtrasTab from '../components/ExtrasTab'
 import RecipeCard from '../components/RecipeCard'
+import RecipeDetailDialog from '../components/RecipeDetailDialog'
 import RecipeForm from './RecipeForm'
-import { useRecipes, useDeleteRecipe } from '../hooks/useRecipes'
+import { useRecipes, useRecipe, useDeleteRecipe } from '../hooks/useRecipes'
 import { getCategories } from '../api/categories'
 import { suggestRecipe } from '../api/recipes'
 import type { Recipe, RecipeSuggestion } from '../types/recipe'
@@ -57,6 +60,7 @@ function SkeletonGrid() {
 }
 
 function RecipesView() {
+  const [activeTab, setActiveTab] = useState(0)
   const [searchInput, setSearchInput] = useState('')
   const [debouncedSearch] = useDebounce(searchInput, 300)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -64,6 +68,9 @@ function RecipesView() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
+  const [detailRecipeId, setDetailRecipeId] = useState<number | null>(null)
+
+  const { data: detailRecipe = null } = useRecipe(detailRecipeId)
 
   // Despensa Virtual state
   const [pantryOpen, setPantryOpen] = useState(false)
@@ -178,50 +185,154 @@ function RecipesView() {
   })
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
-      {/* Search */}
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="Buscar recetas..."
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        sx={{ mb: 2 }}
-      />
+    <Box>
+      {/* Tabs */}
+      <Box sx={{ px: 3, pt: 2, bgcolor: 'background.default' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, v) => setActiveTab(v)}
+          sx={{
+            '& .MuiTabs-indicator': { bgcolor: '#4da8ff', height: 3, borderRadius: 2 },
+            '& .MuiTab-root': {
+              fontFamily: '"Inter", sans-serif',
+              fontWeight: 700,
+              fontSize: 15,
+              textTransform: 'none',
+              color: '#6a769e',
+              '&.Mui-selected': { color: '#4da8ff' },
+            },
+          }}
+        >
+          <Tab label="Recetas" />
+          <Tab label="Snacks Rápidos" />
+        </Tabs>
+      </Box>
+
+      {activeTab === 1 && <ExtrasTab />}
+
+      {activeTab === 0 && (
+      <Box sx={{ p: 3, pb: 10 }}>
+      {/* Search bar */}
+      <Box sx={{ position: 'relative', mb: 4 }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 16,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#6a769e',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
+        </Box>
+        <TextField
+          fullWidth
+          placeholder="Buscar recetas saludables..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              pl: 6,
+              py: 0.5,
+              bgcolor: '#eef2ff',
+              borderRadius: '16px',
+              '& fieldset': { border: 'none' },
+              '&.Mui-focused fieldset': { border: '2px solid #4da8ff' },
+            },
+          }}
+        />
+      </Box>
 
       {/* Category chips */}
-      <Box sx={{ overflowX: 'auto', display: 'flex', gap: 1, pb: 1, mb: 1 }}>
+      <Box
+        sx={{
+          overflowX: 'auto',
+          display: 'flex',
+          gap: 1.5,
+          pb: 1,
+          mb: 1,
+          mx: -3,
+          px: 3,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
         {categories.map((cat) => (
-          <Chip
+          <Box
             key={cat.id}
-            label={cat.name}
+            component="button"
             onClick={() => handleCategoryClick(cat.id)}
-            color={selectedCategoryId === cat.id ? 'primary' : 'default'}
-            variant={selectedCategoryId === cat.id ? 'filled' : 'outlined'}
-            sx={{ flexShrink: 0 }}
-          />
+            sx={{
+              flexShrink: 0,
+              bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#e8eeff',
+              color: selectedCategoryId === cat.id ? 'white' : '#44464f',
+              px: 3,
+              py: 1.25,
+              borderRadius: 100,
+              fontSize: 14,
+              fontWeight: selectedCategoryId === cat.id ? 700 : 600,
+              fontFamily: '"Inter", sans-serif',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              letterSpacing: '0.02em',
+              '&:hover': {
+                bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#dde3f0',
+              },
+            }}
+          >
+            {cat.name}
+          </Box>
         ))}
       </Box>
 
       {/* Subcategory chips */}
       {selectedCategory && selectedCategory.subcategories.length > 0 && (
-        <Box sx={{ overflowX: 'auto', display: 'flex', gap: 1, pb: 1, mb: 2 }}>
+        <Box
+          sx={{
+            overflowX: 'auto',
+            display: 'flex',
+            gap: 1,
+            pb: 1,
+            mb: 3,
+            mx: -3,
+            px: 3,
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
+        >
           {selectedCategory.subcategories.map((sub) => (
-            <Chip
+            <Box
               key={sub.id}
-              label={sub.name}
-              size="small"
+              component="button"
               onClick={() => handleSubcategoryClick(sub.id)}
-              color={selectedSubcategoryId === sub.id ? 'secondary' : 'default'}
-              variant={selectedSubcategoryId === sub.id ? 'filled' : 'outlined'}
-              sx={{ flexShrink: 0 }}
-            />
+              sx={{
+                flexShrink: 0,
+                bgcolor: selectedSubcategoryId === sub.id ? '#5071d5' : '#e8eeff',
+                color: selectedSubcategoryId === sub.id ? 'white' : '#44464f',
+                px: 2,
+                py: 0.75,
+                borderRadius: 100,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: '"Inter", sans-serif',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {sub.name}
+            </Box>
           ))}
         </Box>
       )}
 
       {/* Recipe grid */}
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {isLoading ? (
           <SkeletonGrid />
         ) : recipes.length === 0 ? (
@@ -244,12 +355,13 @@ function RecipesView() {
           </Grid>
         ) : (
           recipes.map((recipe) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={recipe.id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={recipe.id} sx={{ display: 'flex' }}>
               <RecipeCard
                 recipe={recipe}
                 subcategoryName={recipe.subcategory_id ? subcategoryMap[recipe.subcategory_id] : undefined}
                 onEdit={handleEdit}
                 onDelete={setDeleteTarget}
+                onView={(r) => setDetailRecipeId(r.id)}
               />
             </Grid>
           ))
@@ -259,7 +371,18 @@ function RecipesView() {
       {/* FAB SpeedDial */}
       <SpeedDial
         ariaLabel="Acciones de receta"
-        sx={{ position: 'fixed', bottom: 72, right: 16 }}
+        sx={{
+          position: 'fixed',
+          bottom: 88,
+          right: 20,
+          '& .MuiFab-primary': {
+            bgcolor: '#005cb2',
+            '&:hover': { bgcolor: '#004090' },
+            borderRadius: '16px',
+            width: 56,
+            height: 56,
+          },
+        }}
         icon={<SpeedDialIcon openIcon={<AddIcon />} />}
       >
         <SpeedDialAction
@@ -273,6 +396,14 @@ function RecipesView() {
           onClick={() => setPantryOpen(true)}
         />
       </SpeedDial>
+
+      {/* Recipe detail dialog */}
+      <RecipeDetailDialog
+        open={Boolean(detailRecipeId)}
+        recipe={detailRecipe}
+        onClose={() => setDetailRecipeId(null)}
+        onEdit={(r) => { setDetailRecipeId(null); handleEdit(r) }}
+      />
 
       {/* Recipe form dialog */}
       <RecipeForm
@@ -364,6 +495,8 @@ function RecipesView() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+    </Box>
+      )}
     </Box>
   )
 }

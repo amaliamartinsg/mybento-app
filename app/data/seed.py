@@ -1,4 +1,4 @@
-"""Initial data seed for PyPlanner.
+"""Initial data seed for MyBento.
 
 Run once to populate the database with default categories, profile,
 sample extras and sample recipes.

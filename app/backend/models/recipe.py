@@ -1,12 +1,22 @@
 """SQLModel models for Recipe and RecipeIngredient."""
 
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
+from sqlalchemy import Column, String
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.backend.models.category import SubCategory
+
+
+class MealType(str, Enum):
+    """Course type for recipes in the Comida (lunch) category."""
+
+    PLATO_UNICO = "plato_unico"
+    PRIMERO = "primero"
+    SEGUNDO = "segundo"
 
 
 class Recipe(SQLModel, table=True):
@@ -20,6 +30,8 @@ class Recipe(SQLModel, table=True):
         id: Primary key, auto-generated.
         name: Recipe name, indexed for search.
         subcategory_id: Optional FK to SubCategory.
+        meal_type: Course type (plato_unico, primero, segundo). Only meaningful
+            for Comida category recipes; defaults to plato_unico for all others.
         instructions_text: Free-text cooking instructions.
         image_url: URL of the recipe image (Unsplash or custom).
         servings: Number of servings the recipe yields.
@@ -35,8 +47,13 @@ class Recipe(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     subcategory_id: int | None = Field(default=None, foreign_key="subcategory.id")
+    meal_type: MealType = Field(
+        default=MealType.PLATO_UNICO,
+        sa_column=Column(String, nullable=False, default=MealType.PLATO_UNICO.value),
+    )
     instructions_text: str | None = None
     image_url: str | None = None
+    external_url: str | None = None
     servings: int = Field(default=1)
 
     # Macro totals — computed from ingredients via USDA, stored for fast reads

@@ -35,7 +35,10 @@ Thumbs.db
 
 #Added
 .claude/
+CLAUDE.md
 
 # Frontend React
 app/frontend/node_modules/
 app/frontend/dist/
+stitch/
+stitch_dark/
