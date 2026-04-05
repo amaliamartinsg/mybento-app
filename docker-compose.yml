@@ -1,19 +1,41 @@
 services:
+
+  scraper:
+    build:
+      context: ./recipe-url-api
+    expose:
+      - "8001"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      ASSEMBLYAI_API_KEY: ${ASSEMBLYAI_API_KEY}
+      SERVICE_API_KEY: ${SCRAPER_API_KEY}
+      KEYWORDS: ${KEYWORDS:-ingrediente}
+      RATE_LIMIT_DAILY: ${RATE_LIMIT_DAILY:-50}
+      RATE_LIMIT_TIMEZONE: ${RATE_LIMIT_TIMEZONE:-Europe/Madrid}
+      RATE_LIMIT_DB_PATH: data/rate_limits.db
+    volumes:
+      - scraper_outputs:/app/outputs
+      - scraper_data:/app/data
+    restart: unless-stopped
+
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
+      context: ./app
+      dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: sqlite:////data/recipe_manager.db
       USDA_API_KEY: ${USDA_API_KEY}
       UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SCRAPER_API_URL: ${SCRAPER_API_URL}
+      SCRAPER_API_URL: http://scraper:8001
       SCRAPER_API_KEY: ${SCRAPER_API_KEY}
     volumes:
       - db_data:/data
     expose:
       - "8000"
+    depends_on:
+      - scraper
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 10s
@@ -37,3 +59,5 @@ services:
 
 volumes:
   db_data:
+  scraper_outputs:
+  scraper_data:

@@ -20,7 +20,7 @@ class UnsplashAuthError(Exception):
     """Raised when Unsplash rejects the access key (HTTP 401)."""
 
 
-async def search_images(query: str, count: int = 5) -> list[str]:
+async def search_images(query: str, count: int = 3, page: int = 1) -> list[str]:
     """Search Unsplash for food/recipe photos matching *query*.
 
     Args:
@@ -41,6 +41,7 @@ async def search_images(query: str, count: int = 5) -> list[str]:
     params = {
         "query": query,
         "per_page": min(count, 30),
+        "page": page,
         "orientation": "landscape",
         "client_id": UNSPLASH_ACCESS_KEY,
     }

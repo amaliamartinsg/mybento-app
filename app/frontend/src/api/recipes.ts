@@ -30,8 +30,8 @@ export async function suggestRecipe(ingredients: string[]): Promise<RecipeSugges
   return data
 }
 
-export async function searchImages(query: string): Promise<string[]> {
-  const { data } = await client.get<string[]>('/recipes/images', { params: { query } })
+export async function searchImages(query: string, page: number = 1): Promise<string[]> {
+  const { data } = await client.get<string[]>('/recipes/images', { params: { query, count: 3, page } })
   return data
 }
 
