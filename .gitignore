@@ -102,3 +102,4 @@ output.md
 
 #Added 
 outputs/
+data/rate_limits.db
