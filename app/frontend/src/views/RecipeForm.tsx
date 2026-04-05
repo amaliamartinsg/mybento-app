@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
@@ -7,10 +7,12 @@ import AddIcon from '@mui/icons-material/Add'
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import CasinoIcon from '@mui/icons-material/Casino'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
 import GroupsIcon from '@mui/icons-material/Groups'
 import RemoveIcon from '@mui/icons-material/Remove'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
 import Alert from '@mui/material/Alert'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
@@ -241,19 +243,38 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     }
   }
 
-  const handleSearchImages = async () => {
+  const handleSearchImages = async (page: number = 1) => {
     const query = recipeName.trim() || 'comida saludable'
     setCarouselLoading(true)
     setCarouselError(null)
     setShowImagePicker(true)
     try {
-      const urls = await searchImages(query)
+      const urls = await searchImages(query, page)
       setCarouselImages(urls)
     } catch (e) {
       setCarouselError((e as Error).message)
     } finally {
       setCarouselLoading(false)
     }
+  }
+
+  const handleShuffleImages = () => {
+    const randomPage = Math.floor(Math.random() * 15) + 1
+    handleSearchImages(randomPage)
+  }
+
+  const handleLocalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      if (dataUrl) {
+        setValue('image_url', dataUrl)
+        setShowImagePicker(false)
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleUnitChange = async (index: number, newUnit: Unit) => {
@@ -368,7 +389,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 />
                 <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Button
-                    onClick={handleSearchImages}
+                    onClick={() => handleSearchImages()}
                     disabled={carouselLoading}
                     sx={{
                       bgcolor: 'rgba(255,255,255,0.9)',
@@ -387,7 +408,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
             ) : (
               /* Upload placeholder */
               <Box
-                onClick={handleSearchImages}
+                onClick={() => handleSearchImages()}
                 sx={{
                   width: '100%',
                   height: 224,
@@ -443,9 +464,20 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 700, fontSize: 18 }}>
                   Elige una imagen
                 </Typography>
-                <IconButton size="small" onClick={() => setShowImagePicker(false)} sx={{ bgcolor: '#eef2ff', '&:hover': { bgcolor: '#dde3f0' } }}>
-                  <ArrowBackIcon fontSize="small" />
-                </IconButton>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={handleShuffleImages}
+                    disabled={carouselLoading}
+                    title="Otras imágenes"
+                    sx={{ bgcolor: '#eef2ff', '&:hover': { bgcolor: '#dde3f0' } }}
+                  >
+                    <CasinoIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => setShowImagePicker(false)} sx={{ bgcolor: '#eef2ff', '&:hover': { bgcolor: '#dde3f0' } }}>
+                    <ArrowBackIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               </Box>
 
               {carouselError && (
@@ -458,6 +490,29 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 onSelect={(url) => setValue('image_url', url)}
                 isLoading={carouselLoading}
               />
+
+              {!carouselLoading && carouselImages.length === 0 && !carouselError && (
+                <Box sx={{ px: 3, pb: 3 }}>
+                  <Button
+                    component="label"
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<UploadFileIcon />}
+                    sx={{
+                      borderRadius: '14px',
+                      borderColor: '#c3c7d0',
+                      color: '#44464f',
+                      fontFamily: '"Inter", sans-serif',
+                      fontWeight: 600,
+                      py: 1.5,
+                      '&:hover': { borderColor: '#4da8ff', color: '#4da8ff' },
+                    }}
+                  >
+                    Subir desde el dispositivo
+                    <input type="file" accept="image/*" hidden onChange={handleLocalImageUpload} />
+                  </Button>
+                </Box>
+              )}
 
               {selectedImageUrl && !carouselLoading && (
                 <Box sx={{ px: 3, pt: 2, pb: 3 }}>

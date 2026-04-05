@@ -55,19 +55,21 @@ def _build_recipe_read(recipe: Recipe) -> RecipeRead:
 @router.get("/images", response_model=list[str], summary="Buscar imágenes en Unsplash")
 async def get_recipe_images(
     query: Annotated[str, Query(min_length=1, description="Término de búsqueda")],
-    count: Annotated[int, Query(ge=1, le=20)] = 5,
+    count: Annotated[int, Query(ge=1, le=20)] = 3,
+    page: Annotated[int, Query(ge=1, le=30)] = 1,
 ) -> list[str]:
     """Return a list of Unsplash image URLs matching *query*.
 
     Args:
         query: Search term (English terms give better results).
-        count: Number of images to return (1-20, default 5).
+        count: Number of images to return (1-20, default 3).
+        page: Page of results to return (1-30, default 1).
 
     Raises:
         HTTPException 502: If Unsplash returns an error.
     """
     try:
-        urls = await search_images(query=query, count=count)
+        urls = await search_images(query=query, count=count, page=page)
     except UnsplashAuthError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
