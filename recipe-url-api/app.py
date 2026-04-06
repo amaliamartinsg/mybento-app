@@ -1,14 +1,26 @@
 from __future__ import annotations
 
+import logging
+import time
 from dataclasses import asdict
 
-from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from openai import RateLimitError
 from pydantic import BaseModel, HttpUrl
 
 from src.config import load_settings
+from src.logging_utils import (
+    TRACE_HEADER_NAME,
+    configure_logging,
+    generate_trace_id,
+    reset_trace_id,
+    set_trace_id,
+)
 from src.pipeline import run_pipeline
 from src.rate_limit import check_and_increment_daily_limit
+
+configure_logging("scraper")
+logger = logging.getLogger("mybento.scraper")
 
 
 app = FastAPI(title="Recipe Ingestion API", version="1.0.0")
@@ -30,6 +42,46 @@ class RecipeResponse(BaseModel):
     ingredients: list[IngredientResponse]
 
 
+@app.middleware("http")
+async def trace_logging_middleware(request: Request, call_next):
+    trace_id = request.headers.get(TRACE_HEADER_NAME) or generate_trace_id()
+    token = set_trace_id(trace_id)
+    started_at = time.perf_counter()
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        logger.exception(
+            "request_failed",
+            extra={
+                "trace_id": trace_id,
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": duration_ms,
+                "client_ip": request.client.host if request.client else None,
+            },
+        )
+        raise
+    else:
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        response.headers[TRACE_HEADER_NAME] = trace_id
+        logger.info(
+            "request_completed",
+            extra={
+                "trace_id": trace_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+                "client_ip": request.client.host if request.client else None,
+            },
+        )
+        return response
+    finally:
+        reset_trace_id(token)
+
+
 @app.get("/health")
 def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
@@ -41,6 +93,7 @@ def process_recipe(
     response: Response,
     x_api_key: str | None = Header(default=None),
 ) -> RecipeResponse:
+    logger.info("process_recipe_started", extra={"target_url": str(request.url)})
     try:
         settings = load_settings()
         _validate_api_key(x_api_key, settings.service_api_key)
@@ -70,8 +123,13 @@ def process_recipe(
             ),
         ) from exc
     except Exception as exc:
+        logger.exception(
+            "process_recipe_failed",
+            extra={"target_url": str(request.url)},
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+    logger.info("process_recipe_completed", extra={"target_url": str(request.url)})
     return RecipeResponse(**asdict(result.recipe))
 
 

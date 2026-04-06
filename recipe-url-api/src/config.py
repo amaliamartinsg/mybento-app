@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+from src.config_utils import get_env_or_file
 
 load_dotenv()
 
@@ -22,9 +23,9 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    assemblyai_api_key = os.getenv("ASSEMBLYAI_API_KEY", "").strip()
-    service_api_key = os.getenv("SERVICE_API_KEY", "").strip()
+    openai_api_key = get_env_or_file("OPENAI_API_KEY")
+    assemblyai_api_key = get_env_or_file("ASSEMBLYAI_API_KEY")
+    service_api_key = get_env_or_file("SERVICE_API_KEY")
     rate_limit_daily = int(os.getenv("RATE_LIMIT_DAILY", "50").strip())
     rate_limit_timezone = os.getenv("RATE_LIMIT_TIMEZONE", "Europe/Madrid").strip()
     rate_limit_db_path = os.getenv("RATE_LIMIT_DB_PATH", "data/rate_limits.db").strip()
@@ -35,11 +36,11 @@ def load_settings() -> Settings:
     )
 
     if not openai_api_key:
-        raise ValueError("Falta OPENAI_API_KEY en el entorno.")
+        raise ValueError("Falta OPENAI_API_KEY en el entorno o secrets.")
     if not assemblyai_api_key:
-        raise ValueError("Falta ASSEMBLYAI_API_KEY en el entorno.")
+        raise ValueError("Falta ASSEMBLYAI_API_KEY en el entorno o secrets.")
     if not service_api_key:
-        raise ValueError("Falta SERVICE_API_KEY en el entorno.")
+        raise ValueError("Falta SERVICE_API_KEY en el entorno o secrets.")
     if not keywords:
         raise ValueError("La lista KEYWORDS no puede estar vacia.")
 

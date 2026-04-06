@@ -11,6 +11,7 @@ Servicios en `docker-compose.yml`:
 - `frontend`: Nginx sirviendo SPA en `http://localhost:8080`, con proxy `/api -> backend:8000`
 - `backend`: FastAPI interno en `:8000` (healthcheck en `/health`)
 - `scraper`: FastAPI interno en `:8001` (`/process`, `/health`)
+- `loki`, `promtail`, `grafana`: centralizacion y consulta de logs
 
 Persistencia:
 - `db_data`: sqlite del backend (`/data/recipe_manager.db`)
@@ -26,30 +27,36 @@ Persistencia:
 |  |- data/                    # seed inicial de datos
 |  `- frontend/                # React + Vite + Dockerfile + nginx.conf
 |- recipe-url-api/             # API FastAPI de ingestion por URL
+|- ops/logging/                # Loki, Promtail y provision de Grafana
 |- docker-compose.yml          # Compose global (fuente de verdad)
-|- .env.example                # plantilla de variables
-`- .env                        # variables reales (no versionar)
+|- .env.example                # plantilla no sensible
+|- .env                        # variables no sensibles reales (no versionar)
+`- .secrets/                   # secretos locales en archivos (no versionar)
 ```
 
-## Variables de entorno
+## Configuracion
 
-Base:
-- `USDA_API_KEY` (obligatoria para macros en ingredientes)
-- `UNSPLASH_ACCESS_KEY` (obligatoria para busqueda de imagenes)
-- `OPENAI_API_KEY` (obligatoria: backend y scraper)
-- `SCRAPER_API_KEY` (obligatoria: backend -> scraper y auth en scraper)
+Variables no sensibles en `.env`:
+- `OPENAI_MODEL`
+- `KEYWORDS`
+- `RATE_LIMIT_DAILY`
+- `RATE_LIMIT_TIMEZONE`
+- `GRAFANA_ADMIN_USER`
 
-Opcionales recomendadas para scraper:
-- `ASSEMBLYAI_API_KEY` (obligatoria si vas a extraer desde video/Instagram)
-- `OPENAI_MODEL` (default: `gpt-4.1-mini`)
-- `KEYWORDS` (default: `ingrediente`)
-- `RATE_LIMIT_DAILY` (default: `50`)
-- `RATE_LIMIT_TIMEZONE` (default: `Europe/Madrid`)
+Secrets en archivos dentro de `.secrets/`:
+- `usda_api_key.txt`
+- `unsplash_access_key.txt`
+- `openai_api_key.txt`
+- `scraper_api_key.txt`
+- `assemblyai_api_key.txt`
+- `grafana_admin_password.txt`
 
 Notas:
-- El backend en Docker usa `DATABASE_URL=sqlite:////data/recipe_manager.db` (inyectado por compose).
+- `SCRAPER_API_KEY` debe coincidir con la key usada por el scraper (`SERVICE_API_KEY`).
+- El backend en Docker usa `DATABASE_URL=sqlite:////data/recipe_manager.db`.
 - `RATE_LIMIT_DB_PATH` en scraper se fija por compose a `data/rate_limits.db`.
-- No subas `.env` al repositorio.
+- El codigo soporta ambos modos: variables de entorno normales para desarrollo local y `*_FILE` para Docker secrets.
+- `docker compose config` ya no imprime los valores sensibles; solo muestra rutas de archivos de secret.
 
 ## Arranque rapido (Docker Compose)
 
@@ -59,21 +66,36 @@ Notas:
 copy .env.example .env
 ```
 
-2. Rellenar en `.env` al menos:
-`USDA_API_KEY`, `UNSPLASH_ACCESS_KEY`, `OPENAI_API_KEY`, `SCRAPER_API_KEY`, `ASSEMBLYAI_API_KEY`.
+2. Crear los ficheros de secret:
 
-3. Levantar todo:
+```bash
+mkdir .secrets
+```
+
+3. Guardar una credencial por archivo:
+
+```text
+.secrets/usda_api_key.txt
+.secrets/unsplash_access_key.txt
+.secrets/openai_api_key.txt
+.secrets/scraper_api_key.txt
+.secrets/assemblyai_api_key.txt
+.secrets/grafana_admin_password.txt
+```
+
+4. Levantar todo:
 
 ```bash
 docker compose up -d --build
 ```
 
-4. Verificar:
+5. Verificar:
 
 ```bash
 docker compose ps
 curl http://localhost:8080
 curl http://localhost:8000/health
+curl http://localhost:3000
 ```
 
 Parar:
@@ -97,6 +119,9 @@ cd recipe-url-api
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+set OPENAI_API_KEY=tu_valor
+set ASSEMBLYAI_API_KEY=tu_valor
+set SERVICE_API_KEY=tu_valor
 uvicorn app:app --reload --port 8001
 ```
 
@@ -106,6 +131,9 @@ uvicorn app:app --reload --port 8001
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r app/backend/requirements.txt
+set USDA_API_KEY=tu_valor
+set UNSPLASH_ACCESS_KEY=tu_valor
+set OPENAI_API_KEY=tu_valor
 set SCRAPER_API_URL=http://localhost:8001
 set SCRAPER_API_KEY=tu_valor
 uvicorn app.backend.main:app --reload --port 8000
@@ -146,7 +174,7 @@ Recomendado:
 ## Troubleshooting rapido
 
 - Error `Dockerfile ... no such file`: revisa rutas de `build.context` y `dockerfile` en compose.
-- `403` en `/recipes/scrape`: `SCRAPER_API_KEY` no coincide con la key del scraper.
+- `403` en `/recipes/scrape`: `scraper_api_key.txt` no coincide entre backend y scraper.
 - `429` en scraper: limite diario agotado (`RATE_LIMIT_DAILY`).
 - `503` en scraper: limite/cuota de proveedor OpenAI.
 - Backend sin datos: borra volumen `db_data` y reinicia para relanzar seed.

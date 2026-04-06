@@ -1,31 +1,24 @@
-"""OpenAI GPT-4o mini service — Despensa Virtual (recipe suggestion).
-
-Given a list of available ingredients, asks GPT-4o mini to suggest a
-complete recipe and returns a validated :class:`RecipeSuggestion` object.
-
-Docs: https://platform.openai.com/docs/api-reference/chat
-"""
+"""OpenAI GPT-4o mini service for recipe suggestions."""
 
 import json
-import os
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, AuthenticationError
 from pydantic import ValidationError
 
+from app.backend.config_utils import get_env_or_file
 from app.backend.schemas.recipe import RecipeSuggestion
 
 load_dotenv()
 
-OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-
 
 class OpenAIAuthError(Exception):
-    """Raised when OpenAI rejects the API key (AuthenticationError)."""
+    """Raised when OpenAI rejects the API key."""
 
-SYSTEM_PROMPT = """Eres un chef experto en nutrición.
-Cuando el usuario te dé una lista de ingredientes disponibles,
-propón UNA receta completa y devuelve SOLO un JSON válido con esta estructura exacta:
+
+SYSTEM_PROMPT = """Eres un chef experto en nutricion.
+Cuando el usuario te de una lista de ingredientes disponibles,
+propon UNA receta completa y devuelve SOLO un JSON valido con esta estructura exacta:
 {
   "name": "Nombre de la receta",
   "category_suggestion": "Comida",
@@ -40,27 +33,14 @@ No incluyas texto fuera del JSON."""
 
 
 async def suggest_recipe(available_ingredients: list[str]) -> RecipeSuggestion:
-    """Ask GPT-4o mini to suggest a recipe from *available_ingredients*.
-
-    Retries once with ``temperature=0`` if the first attempt produces
-    invalid JSON or a response that does not match :class:`RecipeSuggestion`.
-
-    Args:
-        available_ingredients: List of ingredient names the user has on hand.
-
-    Returns:
-        A validated :class:`RecipeSuggestion` ready to pre-fill the recipe form.
-
-    Raises:
-        RuntimeError: If the OpenAI API key is not set, the API call fails,
-                      or the response cannot be parsed after the retry.
-    """
-    if not OPENAI_API_KEY:
+    """Ask OpenAI to suggest a recipe from ``available_ingredients``."""
+    openai_api_key = get_env_or_file("OPENAI_API_KEY")
+    if not openai_api_key:
         raise RuntimeError(
-            "OpenAI: OPENAI_API_KEY no está configurada en el archivo .env"
+            "OpenAI: OPENAI_API_KEY no esta configurada en el entorno o secrets"
         )
 
-    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+    client = AsyncOpenAI(api_key=openai_api_key)
     ingredients_text = ", ".join(available_ingredients)
     user_message = f"Ingredientes disponibles: {ingredients_text}"
 
@@ -77,8 +57,7 @@ async def suggest_recipe(available_ingredients: list[str]) -> RecipeSuggestion:
             )
         except AuthenticationError as exc:
             raise OpenAIAuthError(
-                "OpenAI: clave inválida o no configurada — "
-                "comprueba OPENAI_API_KEY en el archivo .env"
+                "OpenAI: clave invalida o no configurada; revisa OPENAI_API_KEY"
             ) from exc
         except Exception as exc:
             raise RuntimeError(
@@ -92,12 +71,10 @@ async def suggest_recipe(available_ingredients: list[str]) -> RecipeSuggestion:
             return RecipeSuggestion.model_validate(data)
         except (json.JSONDecodeError, ValidationError) as exc:
             if attempt == 0:
-                # Will retry with temperature=0
                 continue
             raise RuntimeError(
-                f"OpenAI: la respuesta no es un JSON válido tras 2 intentos. "
-                f"Último error: {exc}. Respuesta recibida: {raw_content[:300]}"
+                f"OpenAI: la respuesta no es un JSON valido tras 2 intentos. "
+                f"Ultimo error: {exc}. Respuesta recibida: {raw_content[:300]}"
             ) from exc
 
-    # Should never reach here, but keeps the type checker happy
-    raise RuntimeError("OpenAI: no se pudo obtener una sugerencia válida")
+    raise RuntimeError("OpenAI: no se pudo obtener una sugerencia valida")

@@ -1,15 +1,21 @@
-services:
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
+services:
   scraper:
     build:
       context: ./recipe-url-api
     expose:
       - "8001"
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SERVICE_NAME: scraper
+      OPENAI_API_KEY_FILE: /run/config/openai_api_key.txt
+      ASSEMBLYAI_API_KEY_FILE: /run/config/assemblyai_api_key.txt
+      SERVICE_API_KEY_FILE: /run/config/scraper_api_key.txt
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
-      ASSEMBLYAI_API_KEY: ${ASSEMBLYAI_API_KEY}
-      SERVICE_API_KEY: ${SCRAPER_API_KEY}
       KEYWORDS: ${KEYWORDS:-ingrediente}
       RATE_LIMIT_DAILY: ${RATE_LIMIT_DAILY:-50}
       RATE_LIMIT_TIMEZONE: ${RATE_LIMIT_TIMEZONE:-Europe/Madrid}
@@ -17,21 +23,30 @@ services:
     volumes:
       - scraper_outputs:/app/outputs
       - scraper_data:/app/data
+      - ${OPENAI_API_KEY_FILE_PATH:-./.secrets/openai_api_key.txt}:/run/config/openai_api_key.txt:ro
+      - ${ASSEMBLYAI_API_KEY_FILE_PATH:-./.secrets/assemblyai_api_key.txt}:/run/config/assemblyai_api_key.txt:ro
+      - ${SCRAPER_API_KEY_FILE_PATH:-./.secrets/scraper_api_key.txt}:/run/config/scraper_api_key.txt:ro
     restart: unless-stopped
+    logging: *default-logging
 
   backend:
     build:
       context: ./app
       dockerfile: backend/Dockerfile
     environment:
+      SERVICE_NAME: backend
       DATABASE_URL: sqlite:////data/recipe_manager.db
-      USDA_API_KEY: ${USDA_API_KEY}
-      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      USDA_API_KEY_FILE: /run/config/usda_api_key.txt
+      UNSPLASH_ACCESS_KEY_FILE: /run/config/unsplash_access_key.txt
+      OPENAI_API_KEY_FILE: /run/config/openai_api_key.txt
+      SCRAPER_API_KEY_FILE: /run/config/scraper_api_key.txt
       SCRAPER_API_URL: http://scraper:8001
-      SCRAPER_API_KEY: ${SCRAPER_API_KEY}
     volumes:
       - db_data:/data
+      - ${USDA_API_KEY_FILE_PATH:-./.secrets/usda_api_key.txt}:/run/config/usda_api_key.txt:ro
+      - ${UNSPLASH_ACCESS_KEY_FILE_PATH:-./.secrets/unsplash_access_key.txt}:/run/config/unsplash_access_key.txt:ro
+      - ${OPENAI_API_KEY_FILE_PATH:-./.secrets/openai_api_key.txt}:/run/config/openai_api_key.txt:ro
+      - ${SCRAPER_API_KEY_FILE_PATH:-./.secrets/scraper_api_key.txt}:/run/config/scraper_api_key.txt:ro
     expose:
       - "8000"
     depends_on:
@@ -43,6 +58,7 @@ services:
       retries: 5
       start_period: 20s
     restart: unless-stopped
+    logging: *default-logging
 
   frontend:
     build:
@@ -50,14 +66,64 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_BACKEND_URL: /api
+    environment:
+      SERVICE_NAME: frontend
     ports:
       - "8080:80"
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
+    logging: *default-logging
+
+  loki:
+    image: grafana/loki:3.2.1
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./ops/logging/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    restart: unless-stopped
+    logging: *default-logging
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    volumes:
+      - ./ops/logging/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - promtail_positions:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - export GF_SECURITY_ADMIN_PASSWORD="$$(cat /run/config/grafana_admin_password.txt)" && /run.sh
+    depends_on:
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/logging/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+      - ${GRAFANA_ADMIN_PASSWORD_FILE_PATH:-./.secrets/grafana_admin_password.txt}:/run/config/grafana_admin_password.txt:ro
+    restart: unless-stopped
+    logging: *default-logging
 
 volumes:
   db_data:
   scraper_outputs:
   scraper_data:
+  loki_data:
+  grafana_data:
+  promtail_positions:
