@@ -20,10 +20,10 @@ interface Props {
 }
 
 const MACROS = [
-  { key: 'kcal', label: 'kcal', color: '#68548d', bg: 'rgba(104,84,141,0.1)', fmt: (r: Recipe) => `${Math.round(r.kcal)}` },
-  { key: 'prot', label: 'Prot', color: '#21638d', bg: 'rgba(33,99,141,0.1)', fmt: (r: Recipe) => `${Math.round(r.prot_g)}g` },
-  { key: 'hc',   label: 'HC',   color: '#b56a00', bg: 'rgba(181,106,0,0.1)', fmt: (r: Recipe) => `${Math.round(r.hc_g)}g` },
-  { key: 'fat',  label: 'Grasas', color: '#b3261e', bg: 'rgba(179,38,30,0.1)', fmt: (r: Recipe) => `${Math.round(r.fat_g)}g` },
+  { key: 'kcal', label: 'kcal/r', color: '#68548d', bg: 'rgba(104,84,141,0.1)', fmt: (r: Recipe) => `${Math.round(r.kcal)}` },
+  { key: 'prot', label: 'Prot/r', color: '#21638d', bg: 'rgba(33,99,141,0.1)', fmt: (r: Recipe) => `${Math.round(r.prot_g)}g` },
+  { key: 'hc', label: 'HC/r', color: '#b56a00', bg: 'rgba(181,106,0,0.1)', fmt: (r: Recipe) => `${Math.round(r.hc_g)}g` },
+  { key: 'fat', label: 'Grasas/r', color: '#b3261e', bg: 'rgba(179,38,30,0.1)', fmt: (r: Recipe) => `${Math.round(r.fat_g)}g` },
 ]
 
 function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
@@ -31,7 +31,6 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen>
-      {/* Top bar */}
       <AppBar sx={{ position: 'relative', boxShadow: 'none' }}>
         <Toolbar sx={{ height: 56, minHeight: '56px !important', px: 2, gap: 1 }}>
           <IconButton edge="start" color="inherit" onClick={onClose}>
@@ -50,7 +49,6 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
       </AppBar>
 
       <Box sx={{ bgcolor: 'background.default', minHeight: '100%', overflowY: 'auto' }}>
-        {/* Hero image */}
         <Box sx={{ position: 'relative', height: 260, overflow: 'hidden', bgcolor: 'rgba(104,84,141,0.06)' }}>
           {recipe.image_url ? (
             <Box
@@ -67,17 +65,15 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
         </Box>
 
         <Box sx={{ maxWidth: 640, mx: 'auto', px: 3, pt: 3, pb: 8 }}>
-          {/* Name + servings */}
           <Typography
             sx={{ fontFamily: '"Lexend", sans-serif', fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', color: 'text.primary', mb: 0.5 }}
           >
             {recipe.name}
           </Typography>
           <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 3 }}>
-            {recipe.servings} {recipe.servings === 1 ? 'ración' : 'raciones'}
+            {recipe.servings} {recipe.servings === 1 ? 'ración' : 'raciones'} · macros por ración
           </Typography>
 
-          {/* Macro chips */}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
             {MACROS.map(({ key, label, color, bg, fmt }) => (
               <Box
@@ -104,7 +100,6 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
             ))}
           </Box>
 
-          {/* External link */}
           {recipe.external_url && (
             <Button
               component="a"
@@ -130,7 +125,6 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* Ingredients */}
           <Typography
             sx={{ fontFamily: '"Lexend", sans-serif', fontWeight: 700, fontSize: 18, color: 'text.primary', mb: 2 }}
           >
@@ -160,7 +154,6 @@ function RecipeDetailDialog({ open, recipe, onClose, onEdit }: Props) {
             ))}
           </Box>
 
-          {/* Instructions */}
           {recipe.instructions_text && (
             <>
               <Divider sx={{ mb: 3 }} />

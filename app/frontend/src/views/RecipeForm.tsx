@@ -114,7 +114,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<RecipeFormValues>({
     defaultValues: {
       name: '',
@@ -207,6 +207,33 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     setIngredientUnits(['g'])
     setSelectedCategoryId('')
   }, [open, recipe, prefill, categories, reset])
+
+  useEffect(() => {
+    if (!recipe || !open) return
+    const safeServings = Math.max(1, servings || 1)
+
+    if (!dirtyFields.kcal) {
+      setValue('kcal', Number(((recipe.kcal * recipe.servings) / safeServings).toFixed(1)), { shouldDirty: false })
+    }
+    if (!dirtyFields.prot_g) {
+      setValue('prot_g', Number(((recipe.prot_g * recipe.servings) / safeServings).toFixed(1)), { shouldDirty: false })
+    }
+    if (!dirtyFields.hc_g) {
+      setValue('hc_g', Number(((recipe.hc_g * recipe.servings) / safeServings).toFixed(1)), { shouldDirty: false })
+    }
+    if (!dirtyFields.fat_g) {
+      setValue('fat_g', Number(((recipe.fat_g * recipe.servings) / safeServings).toFixed(1)), { shouldDirty: false })
+    }
+  }, [
+    dirtyFields.fat_g,
+    dirtyFields.hc_g,
+    dirtyFields.kcal,
+    dirtyFields.prot_g,
+    open,
+    recipe,
+    servings,
+    setValue,
+  ])
 
   const handleCategoryChange = (catId: string) => {
     setSelectedCategoryId(catId)
@@ -334,11 +361,11 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       if (recipe) {
         const updatePayload: RecipeUpdate = {
           ...basePayload,
-          kcal: Number(values.kcal),
-          prot_g: Number(values.prot_g),
-          hc_g: Number(values.hc_g),
-          fat_g: Number(values.fat_g),
         }
+        if (dirtyFields.kcal) updatePayload.kcal = Number(values.kcal)
+        if (dirtyFields.prot_g) updatePayload.prot_g = Number(values.prot_g)
+        if (dirtyFields.hc_g) updatePayload.hc_g = Number(values.hc_g)
+        if (dirtyFields.fat_g) updatePayload.fat_g = Number(values.fat_g)
         await updateRecipe.mutateAsync({ id: recipe.id, payload: updatePayload })
       } else {
         await createRecipe.mutateAsync(basePayload as RecipeCreate)
@@ -855,7 +882,18 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
           {/* ── Macros (edit mode only) ── */}
           {recipe && (
             <Box sx={{ mb: 4 }}>
-              <Typography sx={fieldLabel}>Macros por receta</Typography>
+              <Typography sx={fieldLabel}>Macros por ración</Typography>
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  color: '#6a769e',
+                  fontFamily: '"Inter", sans-serif',
+                  mb: 1.5,
+                  px: 0.5,
+                }}
+              >
+                Estos valores son para 1 ración. Si cambias ingredientes o raciones, se recalculan al guardar.
+              </Typography>
               <Box
                 sx={{
                   bgcolor: 'background.paper',

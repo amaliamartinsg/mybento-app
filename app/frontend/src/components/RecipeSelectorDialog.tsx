@@ -225,10 +225,10 @@ function RecipeSelectorDialog({ open, onClose, slotId, slotType, weekStart, dayI
                       primary={recipe.name}
                       secondary={
                         <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.25, flexWrap: 'wrap' }}>
-                          <Chip label={`${Math.round(recipe.kcal)} kcal`} size="small" sx={{ height: 18, fontSize: 11 }} />
-                          <Chip label={`P: ${Math.round(recipe.prot_g)}g`} size="small" color="primary" sx={{ height: 18, fontSize: 11 }} />
-                          <Chip label={`HC: ${Math.round(recipe.hc_g)}g`} size="small" color="success" sx={{ height: 18, fontSize: 11 }} />
-                          <Chip label={`G: ${Math.round(recipe.fat_g)}g`} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />
+                          <Chip label={`${Math.round(recipe.kcal)} kcal/r`} size="small" sx={{ height: 18, fontSize: 11 }} />
+                          <Chip label={`P: ${Math.round(recipe.prot_g)}g/r`} size="small" color="primary" sx={{ height: 18, fontSize: 11 }} />
+                          <Chip label={`HC: ${Math.round(recipe.hc_g)}g/r`} size="small" color="success" sx={{ height: 18, fontSize: 11 }} />
+                          <Chip label={`G: ${Math.round(recipe.fat_g)}g/r`} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />
                         </Box>
                       }
                     />

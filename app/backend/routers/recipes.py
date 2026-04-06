@@ -26,6 +26,10 @@ from app.backend.schemas.recipe import (
 )
 from app.backend.services.usda import USDAAuthError, get_nutrition
 from app.backend.services.macro_calculator import calculate_recipe_macros
+from app.backend.services.recipe_macros import (
+    per_serving_totals,
+    to_total_from_per_serving,
+)
 from app.backend.services.openai_service import OpenAIAuthError, suggest_recipe
 from app.backend.services.unsplash import UnsplashAuthError, search_images
 from app.backend.services.scraper import (
@@ -44,7 +48,23 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 def _build_recipe_read(recipe: Recipe) -> RecipeRead:
     """Convert a Recipe ORM instance to its RecipeRead schema."""
-    return RecipeRead.model_validate(recipe)
+    macros = per_serving_totals(recipe)
+    return RecipeRead(
+        id=recipe.id,
+        name=recipe.name,
+        subcategory_id=recipe.subcategory_id,
+        meal_type=recipe.meal_type,
+        instructions_text=recipe.instructions_text,
+        image_url=recipe.image_url,
+        external_url=recipe.external_url,
+        servings=recipe.servings,
+        kcal=macros.kcal,
+        prot_g=macros.prot_g,
+        hc_g=macros.hc_g,
+        fat_g=macros.fat_g,
+        created_at=recipe.created_at,
+        ingredients=recipe.ingredients,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +136,19 @@ def list_recipes(
             query = query.where(Recipe.name.ilike(f"%{search}%"))  # type: ignore[attr-defined]
 
         recipes = session.exec(query).all()
-        return [RecipeSummary.model_validate(r) for r in recipes]
+        return [
+            RecipeSummary(
+                id=r.id,
+                name=r.name,
+                meal_type=r.meal_type,
+                kcal=per_serving_totals(r).kcal,
+                prot_g=per_serving_totals(r).prot_g,
+                hc_g=per_serving_totals(r).hc_g,
+                fat_g=per_serving_totals(r).fat_g,
+                image_url=r.image_url,
+            )
+            for r in recipes
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -198,6 +230,7 @@ async def create_recipe(payload: RecipeCreate) -> RecipeRead:
         meal_type=payload.meal_type,
         instructions_text=payload.instructions_text,
         image_url=payload.image_url,
+        external_url=payload.external_url,
         servings=payload.servings,
         kcal=totals.kcal,
         prot_g=totals.prot_g,
@@ -256,6 +289,8 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
             recipe.instructions_text = payload.instructions_text
         if payload.image_url is not None:
             recipe.image_url = payload.image_url
+        if payload.external_url is not None:
+            recipe.external_url = payload.external_url
         if payload.servings is not None:
             recipe.servings = payload.servings
 
@@ -293,10 +328,26 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
 
             totals = calculate_recipe_macros(new_rows)
             # Manual overrides take precedence over USDA-calculated values
-            recipe.kcal = payload.kcal if payload.kcal is not None else totals.kcal
-            recipe.prot_g = payload.prot_g if payload.prot_g is not None else totals.prot_g
-            recipe.hc_g = payload.hc_g if payload.hc_g is not None else totals.hc_g
-            recipe.fat_g = payload.fat_g if payload.fat_g is not None else totals.fat_g
+            recipe.kcal = (
+                to_total_from_per_serving(payload.kcal, recipe.servings)
+                if payload.kcal is not None
+                else totals.kcal
+            )
+            recipe.prot_g = (
+                to_total_from_per_serving(payload.prot_g, recipe.servings)
+                if payload.prot_g is not None
+                else totals.prot_g
+            )
+            recipe.hc_g = (
+                to_total_from_per_serving(payload.hc_g, recipe.servings)
+                if payload.hc_g is not None
+                else totals.hc_g
+            )
+            recipe.fat_g = (
+                to_total_from_per_serving(payload.fat_g, recipe.servings)
+                if payload.fat_g is not None
+                else totals.fat_g
+            )
 
             for row in new_rows:
                 session.add(row)
@@ -304,13 +355,13 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
         else:
             # No ingredient changes — apply manual macro overrides directly
             if payload.kcal is not None:
-                recipe.kcal = payload.kcal
+                recipe.kcal = to_total_from_per_serving(payload.kcal, recipe.servings)
             if payload.prot_g is not None:
-                recipe.prot_g = payload.prot_g
+                recipe.prot_g = to_total_from_per_serving(payload.prot_g, recipe.servings)
             if payload.hc_g is not None:
-                recipe.hc_g = payload.hc_g
+                recipe.hc_g = to_total_from_per_serving(payload.hc_g, recipe.servings)
             if payload.fat_g is not None:
-                recipe.fat_g = payload.fat_g
+                recipe.fat_g = to_total_from_per_serving(payload.fat_g, recipe.servings)
 
         session.add(recipe)
         session.commit()

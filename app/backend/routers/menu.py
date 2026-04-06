@@ -24,6 +24,7 @@ from app.backend.schemas.menu import (
 )
 from app.backend.schemas.recipe import RecipeSummary
 from app.backend.services.macro_calculator import MacroTotals
+from app.backend.services.recipe_macros import per_serving_totals
 from app.core.menu_generator import autofill_week
 
 router = APIRouter(prefix="/menu", tags=["menu"])
@@ -49,15 +50,17 @@ def _compute_day_macros(day: MenuDay) -> DayMacrosSummary:
 
     for slot in day.slots:
         if slot.recipe is not None:
-            kcal += slot.recipe.kcal
-            prot_g += slot.recipe.prot_g
-            hc_g += slot.recipe.hc_g
-            fat_g += slot.recipe.fat_g
+            macros = per_serving_totals(slot.recipe)
+            kcal += macros.kcal
+            prot_g += macros.prot_g
+            hc_g += macros.hc_g
+            fat_g += macros.fat_g
         if slot.second_recipe is not None:
-            kcal += slot.second_recipe.kcal
-            prot_g += slot.second_recipe.prot_g
-            hc_g += slot.second_recipe.hc_g
-            fat_g += slot.second_recipe.fat_g
+            macros = per_serving_totals(slot.second_recipe)
+            kcal += macros.kcal
+            prot_g += macros.prot_g
+            hc_g += macros.hc_g
+            fat_g += macros.fat_g
 
     for de in day.day_extras:
         kcal += de.extra.kcal * de.quantity
@@ -76,10 +79,26 @@ def _compute_day_macros(day: MenuDay) -> DayMacrosSummary:
 def _build_slot_read(slot: MenuSlot) -> SlotRead:
     """Convert a MenuSlot ORM instance to SlotRead."""
     recipe_summary = (
-        RecipeSummary.model_validate(slot.recipe) if slot.recipe is not None else None
+        RecipeSummary(
+            id=slot.recipe.id,
+            name=slot.recipe.name,
+            meal_type=slot.recipe.meal_type,
+            image_url=slot.recipe.image_url,
+            **per_serving_totals(slot.recipe).__dict__,
+        )
+        if slot.recipe is not None
+        else None
     )
     second_recipe_summary = (
-        RecipeSummary.model_validate(slot.second_recipe) if slot.second_recipe is not None else None
+        RecipeSummary(
+            id=slot.second_recipe.id,
+            name=slot.second_recipe.name,
+            meal_type=slot.second_recipe.meal_type,
+            image_url=slot.second_recipe.image_url,
+            **per_serving_totals(slot.second_recipe).__dict__,
+        )
+        if slot.second_recipe is not None
+        else None
     )
     return SlotRead(
         id=slot.id,
@@ -326,13 +345,25 @@ def update_slot(slot_id: int, payload: SlotUpdate) -> SlotRead:
         if slot.recipe_id is not None:
             r = session.get(Recipe, slot.recipe_id)
             if r is not None:
-                recipe_summary = RecipeSummary.model_validate(r)
+                recipe_summary = RecipeSummary(
+                    id=r.id,
+                    name=r.name,
+                    meal_type=r.meal_type,
+                    image_url=r.image_url,
+                    **per_serving_totals(r).__dict__,
+                )
 
         second_recipe_summary: RecipeSummary | None = None
         if slot.second_recipe_id is not None:
             r2 = session.get(Recipe, slot.second_recipe_id)
             if r2 is not None:
-                second_recipe_summary = RecipeSummary.model_validate(r2)
+                second_recipe_summary = RecipeSummary(
+                    id=r2.id,
+                    name=r2.name,
+                    meal_type=r2.meal_type,
+                    image_url=r2.image_url,
+                    **per_serving_totals(r2).__dict__,
+                )
 
         return SlotRead(
             id=slot.id,

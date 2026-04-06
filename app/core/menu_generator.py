@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from app.backend.models.menu import MenuWeek, SlotType
 from app.backend.models.recipe import MealType, Recipe
 from app.backend.services.macro_calculator import MacroTotals
+from app.backend.services.recipe_macros import per_serving_totals
 
 
 # ---------------------------------------------------------------------------
@@ -112,10 +113,10 @@ def filter_compatible_recipes(
             continue
         if meal_type is not None and recipe.meal_type != meal_type:
             continue
-        if recipe.kcal <= budget.kcal:
+        if per_serving_totals(recipe).kcal <= budget.kcal:
             compatible.append(recipe)
 
-    return sorted(compatible, key=lambda r: r.kcal)
+    return sorted(compatible, key=lambda r: per_serving_totals(r).kcal)
 
 
 def _all_for_category(recipes: list[Recipe], slot_type: SlotType) -> list[Recipe]:
@@ -171,15 +172,17 @@ def autofill_week(
         # Add already-filled slots so we don't double-budget
         for slot in day.slots:
             if slot.recipe_id is not None and slot.recipe is not None:
-                consumed.kcal += slot.recipe.kcal
-                consumed.prot_g += slot.recipe.prot_g
-                consumed.hc_g += slot.recipe.hc_g
-                consumed.fat_g += slot.recipe.fat_g
+                macros = per_serving_totals(slot.recipe)
+                consumed.kcal += macros.kcal
+                consumed.prot_g += macros.prot_g
+                consumed.hc_g += macros.hc_g
+                consumed.fat_g += macros.fat_g
             if slot.second_recipe_id is not None and slot.second_recipe is not None:
-                consumed.kcal += slot.second_recipe.kcal
-                consumed.prot_g += slot.second_recipe.prot_g
-                consumed.hc_g += slot.second_recipe.hc_g
-                consumed.fat_g += slot.second_recipe.fat_g
+                macros = per_serving_totals(slot.second_recipe)
+                consumed.kcal += macros.kcal
+                consumed.prot_g += macros.prot_g
+                consumed.hc_g += macros.hc_g
+                consumed.fat_g += macros.fat_g
 
         # --- Fill empty slots ---
         for slot in day.slots:
@@ -200,17 +203,19 @@ def autofill_week(
             if assignment.recipe_id is not None:
                 chosen = next((r for r in recipes if r.id == assignment.recipe_id), None)
                 if chosen:
-                    consumed.kcal += chosen.kcal
-                    consumed.prot_g += chosen.prot_g
-                    consumed.hc_g += chosen.hc_g
-                    consumed.fat_g += chosen.fat_g
+                    macros = per_serving_totals(chosen)
+                    consumed.kcal += macros.kcal
+                    consumed.prot_g += macros.prot_g
+                    consumed.hc_g += macros.hc_g
+                    consumed.fat_g += macros.fat_g
             if assignment.second_recipe_id is not None:
                 second = next((r for r in recipes if r.id == assignment.second_recipe_id), None)
                 if second:
-                    consumed.kcal += second.kcal
-                    consumed.prot_g += second.prot_g
-                    consumed.hc_g += second.hc_g
-                    consumed.fat_g += second.fat_g
+                    macros = per_serving_totals(second)
+                    consumed.kcal += macros.kcal
+                    consumed.prot_g += macros.prot_g
+                    consumed.hc_g += macros.hc_g
+                    consumed.fat_g += macros.fat_g
 
             assignments.append(assignment)
 
@@ -253,7 +258,7 @@ def _fill_comida_slot(
             (p, s)
             for p in primeros
             for s in segundos
-            if p.kcal + s.kcal <= budget.kcal
+            if per_serving_totals(p).kcal + per_serving_totals(s).kcal <= budget.kcal
         ]
         if valid_pairs:
             chosen_p, chosen_s = random.choice(valid_pairs)
@@ -266,13 +271,13 @@ def _fill_comida_slot(
     # --- 3. Fallback: lowest-kcal plato_unico (ignore budget) ---
     unicos_all = [r for r in all_comida if r.meal_type == MealType.PLATO_UNICO]
     if unicos_all:
-        chosen = min(unicos_all, key=lambda r: r.kcal)
+        chosen = min(unicos_all, key=lambda r: per_serving_totals(r).kcal)
         return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)
 
     # --- 4. Fallback: lowest-kcal primero + segundo (ignore budget) ---
     if primeros and segundos:
-        chosen_p = min(primeros, key=lambda r: r.kcal)
-        chosen_s = min(segundos, key=lambda r: r.kcal)
+        chosen_p = min(primeros, key=lambda r: per_serving_totals(r).kcal)
+        chosen_s = min(segundos, key=lambda r: per_serving_totals(r).kcal)
         return SlotAssignment(
             slot_id=slot_id,
             recipe_id=chosen_p.id,
@@ -280,7 +285,7 @@ def _fill_comida_slot(
         )
 
     # --- 5. Any comida recipe as last resort ---
-    chosen = min(all_comida, key=lambda r: r.kcal)
+    chosen = min(all_comida, key=lambda r: per_serving_totals(r).kcal)
     return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)
 
 
@@ -298,6 +303,6 @@ def _fill_generic_slot(
         fallback = _all_for_category(recipes, slot_type)
         if not fallback:
             return None
-        chosen = min(fallback, key=lambda r: r.kcal)
+        chosen = min(fallback, key=lambda r: per_serving_totals(r).kcal)
 
     return SlotAssignment(slot_id=slot_id, recipe_id=chosen.id)

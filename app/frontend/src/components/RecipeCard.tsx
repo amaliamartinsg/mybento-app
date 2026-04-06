@@ -80,7 +80,7 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
             fontFamily: '"Inter", sans-serif',
           }}
         >
-          {Math.round(recipe.kcal)} kcal
+          {Math.round(recipe.kcal)} kcal/ración
         </Box>
 
         {/* Edit / Delete on hover */}
@@ -164,7 +164,7 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
               fontFamily: '"Inter", sans-serif',
             }}
           >
-            P: {Math.round(recipe.prot_g)}g
+            P: {Math.round(recipe.prot_g)}g/r
           </Box>
           <Box
             sx={{
@@ -178,7 +178,7 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
               fontFamily: '"Inter", sans-serif',
             }}
           >
-            HC: {Math.round(recipe.hc_g)}g
+            HC: {Math.round(recipe.hc_g)}g/r
           </Box>
           <Box
             sx={{
@@ -192,7 +192,7 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
               fontFamily: '"Inter", sans-serif',
             }}
           >
-            G: {Math.round(recipe.fat_g)}g
+            G: {Math.round(recipe.fat_g)}g/r
           </Box>
         </Box>
       </Box>
