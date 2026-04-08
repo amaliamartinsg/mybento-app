@@ -26,6 +26,8 @@ class DayExtraRead(BaseModel):
     extra_id: int
     name: str
     quantity: float
+    grams: float
+    serving_g: float
     kcal: float
     prot_g: float
     hc_g: float

@@ -76,6 +76,7 @@ function RecipeSelectorDialog({ open, onClose, slotId, slotType, weekStart, dayI
   const [debouncedSearch] = useDebounce(search, 300)
   const [mealTypeTab, setMealTypeTab] = useState<MealType>('plato_unico')
   const [snackTab, setSnackTab] = useState<'recetas' | 'snacks_rapidos'>('recetas')
+  const [snackGrams, setSnackGrams] = useState<Record<number, number>>({})
 
   const isComida = slotType === 'comida'
   const isSnack = slotType === 'desayuno' || slotType === 'media_manana' || slotType === 'merienda'
@@ -135,8 +136,10 @@ function RecipeSelectorDialog({ open, onClose, slotId, slotType, weekStart, dayI
   }
 
   function handleSelectExtra(extraId: number) {
+    const extra = extras?.find((item) => item.id === extraId)
+    const grams = snackGrams[extraId] ?? extra?.serving_g ?? 100
     addExtra.mutate(
-      { dayId, payload: { extra_id: extraId, quantity: 1 } },
+      { dayId, payload: { extra_id: extraId, grams } },
       { onSuccess: handleClose },
     )
   }
@@ -257,18 +260,54 @@ function RecipeSelectorDialog({ open, onClose, slotId, slotType, weekStart, dayI
             <List dense disablePadding>
               {extras?.map((extra) => (
                 <ListItem key={extra.id} disablePadding divider>
-                  <ListItemButton onClick={() => handleSelectExtra(extra.id)} disabled={isPending}>
-                    <ListItemText
-                      primary={extra.name}
-                      secondary={
-                        <Box component="span" sx={{ display: 'flex', gap: 0.5, mt: 0.25, flexWrap: 'wrap' }}>
-                          <Chip label={`${Math.round(extra.kcal)} kcal`} size="small" sx={{ height: 18, fontSize: 11 }} />
-                          {extra.prot_g > 0 && <Chip label={`P: ${Math.round(extra.prot_g)}g`} size="small" color="primary" sx={{ height: 18, fontSize: 11 }} />}
-                          {extra.hc_g > 0 && <Chip label={`HC: ${Math.round(extra.hc_g)}g`} size="small" color="success" sx={{ height: 18, fontSize: 11 }} />}
-                          {extra.fat_g > 0 && <Chip label={`G: ${Math.round(extra.fat_g)}g`} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />}
-                        </Box>
-                      }
-                    />
+                  <ListItemButton disabled={isPending}>
+                    {(() => {
+                      const grams = snackGrams[extra.id] ?? extra.serving_g
+                      const ratio = grams / extra.serving_g
+                      const kcal = extra.kcal * ratio
+                      const prot = extra.prot_g * ratio
+                      const hc = extra.hc_g * ratio
+                      const fat = extra.fat_g * ratio
+                      return (
+                        <>
+                          <ListItemText
+                            primary={extra.name}
+                            secondary={
+                              <Box component="span" sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 0.25 }}>
+                                <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                  <Chip label={`${Math.round(kcal)} kcal / ${Math.round(grams)}g`} size="small" sx={{ height: 18, fontSize: 11 }} />
+                                  {prot > 0 && <Chip label={`P: ${Math.round(prot)}g`} size="small" color="primary" sx={{ height: 18, fontSize: 11 }} />}
+                                  {hc > 0 && <Chip label={`HC: ${Math.round(hc)}g`} size="small" color="success" sx={{ height: 18, fontSize: 11 }} />}
+                                  {fat > 0 && <Chip label={`G: ${Math.round(fat)}g`} size="small" color="warning" sx={{ height: 18, fontSize: 11 }} />}
+                                </Box>
+                                <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                  <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Gramos"
+                                    value={grams}
+                                    onChange={(e) => setSnackGrams((prev) => ({ ...prev, [extra.id]: Math.max(1, Number(e.target.value) || extra.serving_g) }))}
+                                    inputProps={{ min: 1, step: 5 }}
+                                    sx={{ width: 110 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <Typography component="span" sx={{ fontSize: 12, color: 'text.secondary' }}>
+                                    Se ajustara automaticamente al consumo.
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            }
+                          />
+                          <Chip
+                            label="Anadir"
+                            color="primary"
+                            onClick={() => handleSelectExtra(extra.id)}
+                            disabled={isPending}
+                            sx={{ fontWeight: 700, mr: 2 }}
+                          />
+                        </>
+                      )
+                    })()}
                   </ListItemButton>
                 </ListItem>
               ))}

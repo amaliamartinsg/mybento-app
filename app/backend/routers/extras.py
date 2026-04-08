@@ -17,6 +17,7 @@ from app.backend.schemas.extra import (
     ExtraUpdate,
     MenuDayExtraCreate,
     MenuDayExtraRead,
+    MenuDayExtraUpdate,
 )
 
 router = APIRouter(tags=["extras"])
@@ -58,10 +59,12 @@ def create_extra(payload: ExtraCreate) -> ExtraRead:
     with get_session() as session:
         extra = Extra(
             name=payload.name,
+            serving_g=payload.serving_g,
             kcal=payload.kcal,
             prot_g=payload.prot_g,
             hc_g=payload.hc_g,
             fat_g=payload.fat_g,
+            lookup_source=payload.lookup_source,
         )
         session.add(extra)
         session.commit()
@@ -97,6 +100,8 @@ def update_extra(extra_id: int, payload: ExtraUpdate) -> ExtraRead:
 
         if payload.name is not None:
             extra.name = payload.name
+        if payload.serving_g is not None:
+            extra.serving_g = payload.serving_g
         if payload.kcal is not None:
             extra.kcal = payload.kcal
         if payload.prot_g is not None:
@@ -105,6 +110,8 @@ def update_extra(extra_id: int, payload: ExtraUpdate) -> ExtraRead:
             extra.hc_g = payload.hc_g
         if payload.fat_g is not None:
             extra.fat_g = payload.fat_g
+        if payload.lookup_source is not None:
+            extra.lookup_source = payload.lookup_source
 
         session.add(extra)
         session.commit()
@@ -154,11 +161,11 @@ def delete_extra(extra_id: int) -> None:
     summary="Añadir extra a un día",
 )
 def add_day_extra(day_id: int, payload: MenuDayExtraCreate) -> MenuDayExtraRead:
-    """Attach a predefined extra to a menu day with a quantity multiplier.
+    """Attach a predefined extra to a menu day with a consumed gram amount.
 
     Args:
         day_id: Primary key of the :class:`MenuDay`.
-        payload: :class:`MenuDayExtraCreate` with ``extra_id`` and ``quantity``.
+        payload: :class:`MenuDayExtraCreate` with ``extra_id`` and ``grams``.
 
     Raises:
         HTTPException 404: If the day or the extra does not exist.
@@ -181,12 +188,38 @@ def add_day_extra(day_id: int, payload: MenuDayExtraCreate) -> MenuDayExtraRead:
         day_extra = MenuDayExtra(
             day_id=day_id,
             extra_id=payload.extra_id,
-            quantity=payload.quantity,
+            quantity=payload.grams / extra.serving_g,
+            grams=payload.grams,
         )
         session.add(day_extra)
         session.commit()
         session.refresh(day_extra)
         _ = day_extra.extra  # trigger lazy load while session is open
+        return MenuDayExtraRead.model_validate(day_extra)
+
+
+@router.put(
+    "/menu/day-extra/{day_extra_id}",
+    response_model=MenuDayExtraRead,
+    summary="Actualizar gramos de un extra de un día",
+)
+def update_day_extra(day_extra_id: int, payload: MenuDayExtraUpdate) -> MenuDayExtraRead:
+    """Update the consumed gram amount of an extra already attached to a day."""
+    with get_session() as session:
+        day_extra = session.get(MenuDayExtra, day_extra_id)
+        if day_extra is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"MenuDayExtra con id={day_extra_id} no encontrado",
+            )
+
+        _ = day_extra.extra
+        day_extra.grams = payload.grams
+        day_extra.quantity = payload.grams / day_extra.extra.serving_g
+        session.add(day_extra)
+        session.commit()
+        session.refresh(day_extra)
+        _ = day_extra.extra
         return MenuDayExtraRead.model_validate(day_extra)
 
 

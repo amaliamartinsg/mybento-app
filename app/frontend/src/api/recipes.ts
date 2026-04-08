@@ -1,5 +1,14 @@
 import client from './client'
-import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion, RecipeFilters, ScrapedRecipe } from '../types/recipe'
+import type {
+  BarcodeResolveResponse,
+  BarcodeResolvedProduct,
+  Recipe,
+  RecipeCreate,
+  RecipeUpdate,
+  RecipeSuggestion,
+  RecipeFilters,
+  ScrapedRecipe,
+} from '../types/recipe'
 
 export async function getRecipes(filters?: RecipeFilters): Promise<Recipe[]> {
   const { data } = await client.get<Recipe[]>('/recipes', { params: filters })
@@ -38,4 +47,22 @@ export async function searchImages(query: string, page: number = 1): Promise<str
 export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   const { data } = await client.post<ScrapedRecipe>('/recipes/scrape', { url }, { timeout: 190000 })
   return data
+}
+
+export async function resolveBarcodeNutrition(file: File): Promise<BarcodeResolveResponse> {
+  const formData = new FormData()
+  formData.append('image', file)
+  const { data } = await client.post<BarcodeResolveResponse>('/nutrition/barcode/resolve', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  })
+  return data
+}
+
+export async function searchOpenFoodFactsByName(query: string): Promise<BarcodeResolvedProduct> {
+  const { data } = await client.get<{ product: BarcodeResolvedProduct }>('/nutrition/openfoodfacts/search', {
+    params: { query },
+    timeout: 15000,
+  })
+  return data.product
 }

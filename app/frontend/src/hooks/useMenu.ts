@@ -6,6 +6,7 @@ import {
   clearSlot,
   autofill,
   addExtra,
+  updateDayExtra,
   removeExtra,
 } from '../api/menu'
 import type { MenuWeekCreate, SlotUpdate } from '../types/menu'
@@ -76,6 +77,17 @@ export function useRemoveExtra(weekStart: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (dayExtraId: number) => removeExtra(dayExtraId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu', weekStart] })
+    },
+  })
+}
+
+export function useUpdateDayExtra(weekStart: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ dayExtraId, grams }: { dayExtraId: number; grams: number }) =>
+      updateDayExtra(dayExtraId, grams),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu', weekStart] })
     },

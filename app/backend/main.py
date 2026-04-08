@@ -16,7 +16,15 @@ from app.backend.logging_utils import (
     reset_trace_id,
     set_trace_id,
 )
-from app.backend.routers import categories, extras, menu, profile, recipes, unit_weights
+from app.backend.routers import (
+    categories,
+    extras,
+    menu,
+    nutrition,
+    profile,
+    recipes,
+    unit_weights,
+)
 
 configure_logging("backend")
 logger = logging.getLogger("mybento.backend")
@@ -93,6 +101,7 @@ app.include_router(menu.router)
 app.include_router(extras.router)
 app.include_router(profile.router)
 app.include_router(unit_weights.router)
+app.include_router(nutrition.router)
 
 
 @app.get("/health", tags=["health"])

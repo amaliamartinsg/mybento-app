@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.backend.models.recipe import MealType
+from app.backend.schemas.nutrition import ResolvedNutritionInput
 
 
 class IngredientInput(BaseModel):
@@ -12,6 +13,7 @@ class IngredientInput(BaseModel):
 
     name: str
     quantity_g: float = Field(gt=0)
+    resolved_nutrition: ResolvedNutritionInput | None = None
 
 
 class IngredientRead(BaseModel):
@@ -24,6 +26,10 @@ class IngredientRead(BaseModel):
     prot_100g: float
     hc_100g: float
     fat_100g: float
+    nutrition_product_id: int | None = None
+    nutrition_source: str | None = None
+    nutrition_source_ref: str | None = None
+    barcode: str | None = None
 
     model_config = {"from_attributes": True}
 

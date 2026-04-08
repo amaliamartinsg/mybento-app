@@ -3,6 +3,7 @@
 from app.backend.models.category import Category, SubCategory
 from app.backend.models.extra import Extra, MenuDayExtra
 from app.backend.models.menu import MenuDay, MenuSlot, MenuWeek, SlotType
+from app.backend.models.nutrition import NutritionProduct
 from app.backend.models.profile import ActivityLevel, Goal, Profile
 from app.backend.models.recipe import Recipe, RecipeIngredient
 from app.backend.models.unit_weight import UnitWeight
@@ -18,6 +19,7 @@ __all__ = [
     "SlotType",
     "Extra",
     "MenuDayExtra",
+    "NutritionProduct",
     "ActivityLevel",
     "Goal",
     "Profile",

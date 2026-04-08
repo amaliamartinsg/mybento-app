@@ -9,11 +9,20 @@ export interface RecipeIngredient {
   prot_100g: number
   hc_100g: number
   fat_100g: number
+  nutrition_product_id?: number | null
+  nutrition_source?: string | null
+  nutrition_source_ref?: string | null
+  barcode?: string | null
+}
+
+export interface ResolvedNutritionRef {
+  product_id: number
 }
 
 export interface IngredientInput {
   name: string
   quantity_g: number
+  resolved_nutrition?: ResolvedNutritionRef | null
 }
 
 export interface Recipe {
@@ -76,4 +85,21 @@ export interface RecipeFilters {
   category_id?: number
   subcategory_id?: number
   search?: string
+}
+
+export interface BarcodeResolvedProduct {
+  product_id: number
+  name: string
+  barcode: string
+  source: string
+  source_ref?: string | null
+  kcal_100g: number
+  prot_100g: number
+  hc_100g: number
+  fat_100g: number
+}
+
+export interface BarcodeResolveResponse {
+  barcode: string
+  product: BarcodeResolvedProduct
 }

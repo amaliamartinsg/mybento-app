@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
@@ -29,9 +29,17 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import ImageCarousel from '../components/ImageCarousel'
 import { useCreateRecipe, useUpdateRecipe } from '../hooks/useRecipes'
-import { searchImages, scrapeRecipe } from '../api/recipes'
+import { resolveBarcodeNutrition, searchImages, scrapeRecipe } from '../api/recipes'
 import { lookupUnitWeight, createUnitWeight } from '../api/unitWeights'
-import type { Recipe, RecipeCreate, RecipeUpdate, RecipeSuggestion, MealType, ScrapedRecipe } from '../types/recipe'
+import type {
+  BarcodeResolvedProduct,
+  Recipe,
+  RecipeCreate,
+  RecipeUpdate,
+  RecipeSuggestion,
+  MealType,
+  ScrapedRecipe,
+} from '../types/recipe'
 import type { Category } from '../types/category'
 
 // ─── Shared label style ───────────────────────────────────────────────────────
@@ -85,6 +93,7 @@ interface RecipeFormProps {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Unit = 'g' | 'kg' | 'ud'
+type IngredientResolution = BarcodeResolvedProduct | null
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -100,12 +109,15 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const [scrapeError, setScrapeError] = useState<string | null>(null)
   const [showImagePicker, setShowImagePicker] = useState(false)
   const [ingredientUnits, setIngredientUnits] = useState<Unit[]>(['g'])
+  const [ingredientResolutions, setIngredientResolutions] = useState<IngredientResolution[]>([null])
+  const [barcodeLoadingIndex, setBarcodeLoadingIndex] = useState<number | null>(null)
   const [unitWeightDialog, setUnitWeightDialog] = useState<{
     open: boolean
     ingredientIndex: number
     ingredientName: string
     gramsInput: string
   } | null>(null)
+  const ingredientBarcodeInputs = useRef<Array<HTMLInputElement | null>>([])
 
   const {
     control,
@@ -162,6 +174,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         ingredients: prefillIngredients,
       })
       setIngredientUnits(Array(prefillIngredients.length).fill('g'))
+      setIngredientResolutions(Array(prefillIngredients.length).fill(null))
       setSelectedCategoryId('')
       return
     }
@@ -175,6 +188,24 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         recipe.ingredients.length > 0
           ? recipe.ingredients.map((i) => ({ name: i.name, quantity_g: i.quantity_g }))
           : [{ name: '', quantity_g: 100 }]
+      const recipeResolutions =
+        recipe.ingredients.length > 0
+          ? recipe.ingredients.map((i) => (
+            i.nutrition_product_id
+              ? {
+                  product_id: i.nutrition_product_id,
+                  name: i.name,
+                  barcode: i.barcode ?? '',
+                  source: i.nutrition_source ?? 'openfoodfacts',
+                  source_ref: i.nutrition_source_ref ?? null,
+                  kcal_100g: i.kcal_100g,
+                  prot_100g: i.prot_100g,
+                  hc_100g: i.hc_100g,
+                  fat_100g: i.fat_100g,
+                }
+              : null
+          ))
+          : [null]
       reset({
         name: recipe.name,
         subcategory_id: subcat !== null ? String(subcat) : '',
@@ -190,6 +221,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         fat_g: recipe.fat_g,
       })
       setIngredientUnits(Array(recipeIngredients.length).fill('g'))
+      setIngredientResolutions(recipeResolutions)
       setSelectedCategoryId(cat ? String(cat.id) : '')
       return
     }
@@ -205,6 +237,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       ingredients: [{ name: '', quantity_g: 100 }],
     })
     setIngredientUnits(['g'])
+    setIngredientResolutions([null])
     setSelectedCategoryId('')
   }, [open, recipe, prefill, categories, reset])
 
@@ -261,6 +294,7 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         if (validIngredients.length > 0) {
           replace(validIngredients)
           setIngredientUnits(Array(validIngredients.length).fill('g'))
+          setIngredientResolutions(Array(validIngredients.length).fill(null))
         }
       }
     } catch (e) {
@@ -290,6 +324,14 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
     handleSearchImages(randomPage)
   }
 
+  const setIngredientResolutionAt = (index: number, resolution: IngredientResolution) => {
+    setIngredientResolutions((prev) => prev.map((item, i) => (i === index ? resolution : item)))
+  }
+
+  const clearIngredientResolution = (index: number) => {
+    setIngredientResolutionAt(index, null)
+  }
+
   const handleLocalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -302,6 +344,25 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleIngredientBarcodeUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setBarcodeLoadingIndex(index)
+    setSubmitError(null)
+    try {
+      const result = await resolveBarcodeNutrition(file)
+      setValue(`ingredients.${index}.name`, result.product.name, { shouldDirty: true, shouldValidate: true })
+      setIngredientResolutionAt(index, result.product)
+    } catch (error) {
+      clearIngredientResolution(index)
+      setSubmitError((error as Error).message)
+    } finally {
+      setBarcodeLoadingIndex(null)
+    }
   }
 
   const handleUnitChange = async (index: number, newUnit: Unit) => {
@@ -329,24 +390,6 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
   const onSubmit = async (values: RecipeFormValues) => {
     setSubmitError(null)
 
-    // Convert quantities to grams based on units
-    const convertedIngredients = await Promise.all(
-      values.ingredients.map(async (ing, index) => {
-        const unit = ingredientUnits[index] ?? 'g'
-        let quantity_g = Number(ing.quantity_g)
-        if (unit === 'kg') {
-          quantity_g = quantity_g * 1000
-        } else if (unit === 'ud') {
-          const found = await lookupUnitWeight(ing.name.trim())
-          if (found) {
-            quantity_g = quantity_g * found.grams_per_unit
-          }
-          // If not found, use quantity as-is (shouldn't happen if dialog was shown)
-        }
-        return { name: ing.name.trim(), quantity_g }
-      })
-    )
-
     const basePayload = {
       name: values.name.trim(),
       subcategory_id: values.subcategory_id ? Number(values.subcategory_id) : null,
@@ -355,12 +398,36 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
       instructions_text: values.instructions_text.trim() || null,
       image_url: values.image_url.trim() || null,
       external_url: values.external_url.trim() || null,
-      ingredients: convertedIngredients,
     }
     try {
       if (recipe) {
         const updatePayload: RecipeUpdate = {
           ...basePayload,
+        }
+        const ingredientsDirty =
+          Array.isArray(dirtyFields.ingredients) &&
+          dirtyFields.ingredients.some((ingredientDirty) => Boolean(ingredientDirty?.name || ingredientDirty?.quantity_g))
+        if (ingredientsDirty) {
+          updatePayload.ingredients = await Promise.all(
+            values.ingredients.map(async (ing, index) => {
+              const unit = ingredientUnits[index] ?? 'g'
+              let quantity_g = Number(ing.quantity_g)
+              if (unit === 'kg') {
+                quantity_g = quantity_g * 1000
+              } else if (unit === 'ud') {
+                const found = await lookupUnitWeight(ing.name.trim())
+                if (found) {
+                  quantity_g = quantity_g * found.grams_per_unit
+                }
+              }
+              const resolution = ingredientResolutions[index]
+              return {
+                name: ing.name.trim(),
+                quantity_g,
+                resolved_nutrition: resolution ? { product_id: resolution.product_id } : undefined,
+              }
+            })
+          )
         }
         if (dirtyFields.kcal) updatePayload.kcal = Number(values.kcal)
         if (dirtyFields.prot_g) updatePayload.prot_g = Number(values.prot_g)
@@ -368,7 +435,28 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         if (dirtyFields.fat_g) updatePayload.fat_g = Number(values.fat_g)
         await updateRecipe.mutateAsync({ id: recipe.id, payload: updatePayload })
       } else {
-        await createRecipe.mutateAsync(basePayload as RecipeCreate)
+        // Convert quantities to grams based on units
+        const convertedIngredients = await Promise.all(
+          values.ingredients.map(async (ing, index) => {
+            const unit = ingredientUnits[index] ?? 'g'
+            let quantity_g = Number(ing.quantity_g)
+            if (unit === 'kg') {
+              quantity_g = quantity_g * 1000
+            } else if (unit === 'ud') {
+              const found = await lookupUnitWeight(ing.name.trim())
+              if (found) {
+                quantity_g = quantity_g * found.grams_per_unit
+              }
+            }
+            const resolution = ingredientResolutions[index]
+            return {
+              name: ing.name.trim(),
+              quantity_g,
+              resolved_nutrition: resolution ? { product_id: resolution.product_id } : undefined,
+            }
+          })
+        )
+        await createRecipe.mutateAsync({ ...basePayload, ingredients: convertedIngredients } as RecipeCreate)
       }
       onClose(true)
     } catch (e) {
@@ -518,28 +606,26 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 isLoading={carouselLoading}
               />
 
-              {!carouselLoading && carouselImages.length === 0 && !carouselError && (
-                <Box sx={{ px: 3, pb: 3 }}>
-                  <Button
-                    component="label"
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<UploadFileIcon />}
-                    sx={{
-                      borderRadius: '14px',
-                      borderColor: '#c3c7d0',
-                      color: '#44464f',
-                      fontFamily: '"Inter", sans-serif',
-                      fontWeight: 600,
-                      py: 1.5,
-                      '&:hover': { borderColor: '#4da8ff', color: '#4da8ff' },
-                    }}
-                  >
-                    Subir desde el dispositivo
-                    <input type="file" accept="image/*" hidden onChange={handleLocalImageUpload} />
-                  </Button>
-                </Box>
-              )}
+              <Box sx={{ px: 3, pb: selectedImageUrl && !carouselLoading ? 0 : 3 }}>
+                <Button
+                  component="label"
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<UploadFileIcon />}
+                  sx={{
+                    borderRadius: '14px',
+                    borderColor: '#c3c7d0',
+                    color: '#44464f',
+                    fontFamily: '"Inter", sans-serif',
+                    fontWeight: 600,
+                    py: 1.5,
+                    '&:hover': { borderColor: '#4da8ff', color: '#4da8ff' },
+                  }}
+                >
+                  Subir desde el dispositivo
+                  <input type="file" accept="image/*" hidden onChange={handleLocalImageUpload} />
+                </Button>
+              </Box>
 
               {selectedImageUrl && !carouselLoading && (
                 <Box sx={{ px: 3, pt: 2, pb: 3 }}>
@@ -772,6 +858,11 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                 >
                   {/* Ingredient name */}
                   <Box sx={{ flex: 1, px: 1 }}>
+                    {ingredientResolutions[index] && (
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#2e7d32', mb: 0.25 }}>
+                        Código de barras detectado
+                      </Typography>
+                    )}
                     <input
                       style={{
                         width: '100%',
@@ -784,8 +875,20 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                         outline: 'none',
                       }}
                       placeholder="Nombre del ingrediente"
-                      {...register(`ingredients.${index}.name`, { required: true })}
+                      {...register(`ingredients.${index}.name`, {
+                        required: true,
+                        onChange: () => {
+                          if (ingredientResolutions[index]) {
+                            clearIngredientResolution(index)
+                          }
+                        },
+                      })}
                     />
+                    {ingredientResolutions[index]?.barcode && (
+                      <Typography sx={{ fontSize: 11, color: '#6a769e', mt: 0.25 }}>
+                        EAN: {ingredientResolutions[index]?.barcode}
+                      </Typography>
+                    )}
                   </Box>
                   {/* Grams */}
                   <Box
@@ -836,10 +939,36 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                       <option value="ud">ud.</option>
                     </select>
                   </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => ingredientBarcodeInputs.current[index]?.click()}
+                    disabled={barcodeLoadingIndex === index}
+                    sx={{
+                      color: ingredientResolutions[index] ? '#2e7d32' : '#4da8ff',
+                      borderRadius: '12px',
+                      p: 1,
+                      '&:hover': { bgcolor: '#eef2ff' },
+                    }}
+                    title="Resolver por código de barras"
+                  >
+                    {barcodeLoadingIndex === index ? <CircularProgress size={18} /> : <UploadFileIcon fontSize="small" />}
+                  </IconButton>
+                  <input
+                    ref={(node) => { ingredientBarcodeInputs.current[index] = node }}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => void handleIngredientBarcodeUpload(index, e)}
+                  />
                   {/* Delete */}
                   <IconButton
                     size="small"
-                    onClick={() => { remove(index); setIngredientUnits(u => u.filter((_, i) => i !== index)) }}
+                    onClick={() => {
+                      remove(index)
+                      setIngredientUnits((u) => u.filter((_, i) => i !== index))
+                      setIngredientResolutions((r) => r.filter((_, i) => i !== index))
+                      ingredientBarcodeInputs.current = ingredientBarcodeInputs.current.filter((_, i) => i !== index)
+                    }}
                     disabled={fields.length === 1}
                     sx={{
                       color: fields.length === 1 ? '#c3c7d0' : '#ba1a1a',
@@ -862,7 +991,11 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
             <Button
               fullWidth
               startIcon={<AddIcon />}
-              onClick={() => { append({ name: '', quantity_g: 100 }); setIngredientUnits(u => [...u, 'g']) }}
+              onClick={() => {
+                append({ name: '', quantity_g: 100 })
+                setIngredientUnits((u) => [...u, 'g'])
+                setIngredientResolutions((r) => [...r, null])
+              }}
               sx={{
                 mt: 2,
                 py: 1.75,

@@ -63,10 +63,11 @@ def _compute_day_macros(day: MenuDay) -> DayMacrosSummary:
             fat_g += macros.fat_g
 
     for de in day.day_extras:
-        kcal += de.extra.kcal * de.quantity
-        prot_g += de.extra.prot_g * de.quantity
-        hc_g += de.extra.hc_g * de.quantity
-        fat_g += de.extra.fat_g * de.quantity
+        ratio = _extra_ratio(de)
+        kcal += de.extra.kcal * ratio
+        prot_g += de.extra.prot_g * ratio
+        hc_g += de.extra.hc_g * ratio
+        fat_g += de.extra.fat_g * ratio
 
     return DayMacrosSummary(
         kcal=round(kcal, 1),
@@ -89,6 +90,13 @@ def _build_slot_read(slot: MenuSlot) -> SlotRead:
         if slot.recipe is not None
         else None
     )
+
+
+def _extra_ratio(day_extra) -> float:
+    """Return the gram-based multiplier for an extra entry."""
+    if day_extra.grams is not None and day_extra.extra.serving_g > 0:
+        return day_extra.grams / day_extra.extra.serving_g
+    return day_extra.quantity
     second_recipe_summary = (
         RecipeSummary(
             id=slot.second_recipe.id,
@@ -124,10 +132,12 @@ def _build_menu_week_read(week: MenuWeek) -> MenuWeekRead:
                 extra_id=de.extra_id,
                 name=de.extra.name,
                 quantity=de.quantity,
-                kcal=round(de.extra.kcal * de.quantity, 1),
-                prot_g=round(de.extra.prot_g * de.quantity, 1),
-                hc_g=round(de.extra.hc_g * de.quantity, 1),
-                fat_g=round(de.extra.fat_g * de.quantity, 1),
+                grams=round(de.grams if de.grams is not None else de.quantity * de.extra.serving_g, 1),
+                serving_g=round(de.extra.serving_g, 1),
+                kcal=round(de.extra.kcal * _extra_ratio(de), 1),
+                prot_g=round(de.extra.prot_g * _extra_ratio(de), 1),
+                hc_g=round(de.extra.hc_g * _extra_ratio(de), 1),
+                fat_g=round(de.extra.fat_g * _extra_ratio(de), 1),
             )
             for de in day.day_extras
         ]

@@ -34,6 +34,10 @@ export async function addExtra(dayId: number, payload: MenuDayExtraCreate): Prom
   await client.post(`/menu/day/${dayId}/extras`, payload)
 }
 
+export async function updateDayExtra(dayExtraId: number, grams: number): Promise<void> {
+  await client.put(`/menu/day-extra/${dayExtraId}`, { grams })
+}
+
 export async function removeExtra(dayExtraId: number): Promise<void> {
   await client.delete(`/menu/day-extra/${dayExtraId}`)
 }

@@ -96,5 +96,9 @@ class RecipeIngredient(SQLModel, table=True):
     prot_100g: float = Field(default=0)
     hc_100g: float = Field(default=0)
     fat_100g: float = Field(default=0)
+    nutrition_product_id: int | None = Field(default=None, foreign_key="nutritionproduct.id")
+    nutrition_source: str | None = None
+    nutrition_source_ref: str | None = None
+    barcode: str | None = None
 
     recipe: Recipe = Relationship(back_populates="ingredients")

@@ -24,12 +24,12 @@ from app.backend.schemas.recipe import (
     ScrapedRecipe,
     ScrapeRequest,
 )
-from app.backend.services.usda import USDAAuthError, get_nutrition
 from app.backend.services.macro_calculator import calculate_recipe_macros
 from app.backend.services.recipe_macros import (
     per_serving_totals,
     to_total_from_per_serving,
 )
+from app.backend.services.nutrition_resolver import resolve_ingredient_nutrition
 from app.backend.services.openai_service import OpenAIAuthError, suggest_recipe
 from app.backend.services.unsplash import UnsplashAuthError, search_images
 from app.backend.services.scraper import (
@@ -37,6 +37,7 @@ from app.backend.services.scraper import (
     ScraperRateLimitError,
     scrape_recipe_from_url,
 )
+from app.backend.services.usda import USDAAuthError
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
@@ -195,50 +196,53 @@ async def create_recipe(payload: RecipeCreate) -> RecipeRead:
         HTTPException 403: If the USDA API key is invalid.
         HTTPException 502: If the USDA API call fails unexpectedly.
     """
-    ingredient_rows: list[RecipeIngredient] = []
+    with get_session() as session:
+        ingredient_rows: list[RecipeIngredient] = []
+        for ing_input in payload.ingredients:
+            try:
+                resolved = await resolve_ingredient_nutrition(session, ing_input)
+            except USDAAuthError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=str(exc),
+                ) from exc
+            except RuntimeError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=str(exc),
+                ) from exc
 
-    for ing_input in payload.ingredients:
-        try:
-            nutrition = await get_nutrition(ing_input.name)
-        except USDAAuthError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=str(exc),
-            ) from exc
-        except RuntimeError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=str(exc),
-            ) from exc
-
-        ingredient_rows.append(
-            RecipeIngredient(
-                name=ing_input.name,
-                quantity_g=ing_input.quantity_g,
-                kcal_100g=nutrition.kcal_100g,
-                prot_100g=nutrition.prot_100g,
-                hc_100g=nutrition.hc_100g,
-                fat_100g=nutrition.fat_100g,
+            ingredient_rows.append(
+                RecipeIngredient(
+                    name=resolved.name,
+                    quantity_g=resolved.quantity_g,
+                    kcal_100g=resolved.kcal_100g,
+                    prot_100g=resolved.prot_100g,
+                    hc_100g=resolved.hc_100g,
+                    fat_100g=resolved.fat_100g,
+                    nutrition_product_id=resolved.nutrition_product_id,
+                    nutrition_source=resolved.nutrition_source,
+                    nutrition_source_ref=resolved.nutrition_source_ref,
+                    barcode=resolved.barcode,
+                )
             )
+
+        totals = calculate_recipe_macros(ingredient_rows)
+
+        recipe = Recipe(
+            name=payload.name,
+            subcategory_id=payload.subcategory_id,
+            meal_type=payload.meal_type,
+            instructions_text=payload.instructions_text,
+            image_url=payload.image_url,
+            external_url=payload.external_url,
+            servings=payload.servings,
+            kcal=totals.kcal,
+            prot_g=totals.prot_g,
+            hc_g=totals.hc_g,
+            fat_g=totals.fat_g,
         )
 
-    totals = calculate_recipe_macros(ingredient_rows)
-
-    recipe = Recipe(
-        name=payload.name,
-        subcategory_id=payload.subcategory_id,
-        meal_type=payload.meal_type,
-        instructions_text=payload.instructions_text,
-        image_url=payload.image_url,
-        external_url=payload.external_url,
-        servings=payload.servings,
-        kcal=totals.kcal,
-        prot_g=totals.prot_g,
-        hc_g=totals.hc_g,
-        fat_g=totals.fat_g,
-    )
-
-    with get_session() as session:
         session.add(recipe)
         session.flush()  # assigns recipe.id before we set FKs
 
@@ -307,7 +311,12 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
             new_rows: list[RecipeIngredient] = []
             for ing_input in payload.ingredients:
                 try:
-                    nutrition = await get_nutrition(ing_input.name)
+                    resolved = await resolve_ingredient_nutrition(session, ing_input)
+                except USDAAuthError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=str(exc),
+                    ) from exc
                 except RuntimeError as exc:
                     raise HTTPException(
                         status_code=status.HTTP_502_BAD_GATEWAY,
@@ -317,12 +326,16 @@ async def update_recipe(recipe_id: int, payload: RecipeUpdate) -> RecipeRead:
                 new_rows.append(
                     RecipeIngredient(
                         recipe_id=recipe_id,
-                        name=ing_input.name,
-                        quantity_g=ing_input.quantity_g,
-                        kcal_100g=nutrition.kcal_100g,
-                        prot_100g=nutrition.prot_100g,
-                        hc_100g=nutrition.hc_100g,
-                        fat_100g=nutrition.fat_100g,
+                        name=resolved.name,
+                        quantity_g=resolved.quantity_g,
+                        kcal_100g=resolved.kcal_100g,
+                        prot_100g=resolved.prot_100g,
+                        hc_100g=resolved.hc_100g,
+                        fat_100g=resolved.fat_100g,
+                        nutrition_product_id=resolved.nutrition_product_id,
+                        nutrition_source=resolved.nutrition_source,
+                        nutrition_source_ref=resolved.nutrition_source_ref,
+                        barcode=resolved.barcode,
                     )
                 )
 

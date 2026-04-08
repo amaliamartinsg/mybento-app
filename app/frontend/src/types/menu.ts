@@ -25,6 +25,8 @@ export interface DayExtraRead {
   extra_id: number
   name: string
   quantity: number
+  grams: number
+  serving_g: number
   kcal: number
   prot_g: number
   hc_g: number

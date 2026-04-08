@@ -21,7 +21,7 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import { useQuery } from '@tanstack/react-query'
 import { getExtras } from '../api/extras'
-import { useAddExtra, useRemoveExtra } from '../hooks/useMenu'
+import { useAddExtra, useRemoveExtra, useUpdateDayExtra } from '../hooks/useMenu'
 import { useProfile } from '../hooks/useProfile'
 import type { Extra } from '../types/extra'
 import type { MenuDay, SlotType } from '../types/menu'
@@ -50,9 +50,10 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
   const { data: profile } = useProfile()
   const addExtra = useAddExtra(weekStart)
   const removeExtra = useRemoveExtra(weekStart)
+  const updateDayExtra = useUpdateDayExtra(weekStart)
 
   const [extrasPickerOpen, setExtrasPickerOpen] = useState(false)
-  const [pickerQuantities, setPickerQuantities] = useState<Record<number, number>>({})
+  const [pickerGrams, setPickerGrams] = useState<Record<number, number>>({})
 
   const { data: allExtras, isLoading: loadingExtras } = useQuery({
     queryKey: ['extras'],
@@ -60,19 +61,26 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
     enabled: extrasPickerOpen,
   })
 
-  function handleQuantityChange(extraId: number, delta: number) {
-    setPickerQuantities((prev) => {
-      const current = prev[extraId] ?? 1
-      return { ...prev, [extraId]: Math.max(0.5, Math.round((current + delta) * 2) / 2) }
+  function handleQuantityChange(extraId: number, delta: number, fallbackGrams: number) {
+    setPickerGrams((prev) => {
+      const current = prev[extraId] ?? fallbackGrams
+      return { ...prev, [extraId]: Math.max(5, current + delta) }
     })
   }
 
   function handleAddExtra(extra: Extra) {
-    const quantity = pickerQuantities[extra.id] ?? 1
+    const grams = pickerGrams[extra.id] ?? extra.serving_g
     addExtra.mutate(
-      { dayId: day.id, payload: { extra_id: extra.id, quantity } },
+      { dayId: day.id, payload: { extra_id: extra.id, grams } },
       { onSuccess: () => setExtrasPickerOpen(false) },
     )
+  }
+
+  function handleUpdateConsumedGrams(dayExtraId: number, currentGrams: number, delta: number) {
+    updateDayExtra.mutate({
+      dayExtraId,
+      grams: Math.max(5, currentGrams + delta),
+    })
   }
 
   const kcalTarget = profile?.kcal_target ?? 2200
@@ -363,21 +371,50 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
                     </Box>
                     <Box>
                       <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#1a1c1e' }}>
-                        {de.quantity !== 1 ? `${de.name} ×${de.quantity}` : de.name}
+                        {de.name}
                       </Typography>
                       <Typography sx={{ fontSize: 12, color: '#44464f' }}>
-                        {Math.round(de.kcal)} kcal / unidad
+                        {Math.round(de.grams)} g consumidos · {Math.round(de.kcal)} kcal
                       </Typography>
                     </Box>
                   </Box>
-                  <IconButton
-                    size="small"
-                    onClick={() => removeExtra.mutate(de.id)}
-                    disabled={removeExtra.isPending}
-                    sx={{ color: '#ba1a1a' }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        bgcolor: '#f8f9ff',
+                        borderRadius: 100,
+                        p: 0.5,
+                      }}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={() => handleUpdateConsumedGrams(de.id, de.grams, -5)}
+                        disabled={updateDayExtra.isPending}
+                      >
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
+                      <Typography sx={{ minWidth: 48, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>
+                        {Math.round(de.grams)}g
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleUpdateConsumedGrams(de.id, de.grams, 5)}
+                        disabled={updateDayExtra.isPending}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeExtra.mutate(de.id)}
+                      disabled={removeExtra.isPending}
+                      sx={{ color: '#ba1a1a' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Box>
               ))
             )}
@@ -409,7 +446,10 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
           )}
           <List dense disablePadding>
             {allExtras?.map((extra, idx) => {
-              const qty = pickerQuantities[extra.id] ?? 1
+              const grams = pickerGrams[extra.id] ?? extra.serving_g
+              const ratio = grams / extra.serving_g
+              const kcal = extra.kcal * ratio
+              const prot = extra.prot_g * ratio
               return (
                 <Box key={extra.id}>
                   {idx > 0 && <Divider sx={{ my: 0.5 }} />}
@@ -426,13 +466,13 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
                             p: 0.5,
                           }}
                         >
-                          <IconButton size="small" onClick={() => handleQuantityChange(extra.id, -0.5)}>
+                          <IconButton size="small" onClick={() => handleQuantityChange(extra.id, -5, extra.serving_g)}>
                             <RemoveIcon fontSize="small" />
                           </IconButton>
-                          <Typography sx={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>
-                            {qty}
+                          <Typography sx={{ minWidth: 48, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>
+                            {grams}g
                           </Typography>
-                          <IconButton size="small" onClick={() => handleQuantityChange(extra.id, 0.5)}>
+                          <IconButton size="small" onClick={() => handleQuantityChange(extra.id, 5, extra.serving_g)}>
                             <AddIcon fontSize="small" />
                           </IconButton>
                         </Box>
@@ -451,7 +491,7 @@ function DayDetailView({ open, onClose, day, weekStart }: Props) {
                   >
                     <ListItemText
                       primary={extra.name}
-                      secondary={`${Math.round(extra.kcal)} kcal · P: ${Math.round(extra.prot_g)}g`}
+                      secondary={`${Math.round(kcal)} kcal / ${Math.round(grams)}g · P: ${Math.round(prot)}g`}
                       primaryTypographyProps={{ fontWeight: 600 }}
                     />
                   </ListItem>

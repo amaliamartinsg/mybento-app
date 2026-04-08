@@ -22,6 +22,13 @@ engine = create_engine(
 _MIGRATIONS = [
     "ALTER TABLE recipe ADD COLUMN meal_type TEXT NOT NULL DEFAULT 'plato_unico'",
     "ALTER TABLE menuslot ADD COLUMN second_recipe_id INTEGER REFERENCES recipe(id)",
+    "ALTER TABLE recipeingredient ADD COLUMN nutrition_source TEXT",
+    "ALTER TABLE recipeingredient ADD COLUMN nutrition_source_ref TEXT",
+    "ALTER TABLE recipeingredient ADD COLUMN barcode TEXT",
+    "ALTER TABLE recipeingredient ADD COLUMN nutrition_product_id INTEGER REFERENCES nutritionproduct(id)",
+    "ALTER TABLE extra ADD COLUMN serving_g FLOAT NOT NULL DEFAULT 100",
+    "ALTER TABLE extra ADD COLUMN lookup_source TEXT NOT NULL DEFAULT 'manual'",
+    "ALTER TABLE menudayextra ADD COLUMN grams FLOAT",
 ]
 
 
