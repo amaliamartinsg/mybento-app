@@ -167,8 +167,8 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
         name: prefill.name,
         subcategory_id: '',
         meal_type: 'plato_unico',
-        servings: 1,
-        instructions_text: prefill.instructions_text,
+        servings: prefill.servings ?? 1,
+        instructions_text: prefill.instructions_text ?? '',
         image_url: '',
         external_url: '',
         ingredients: prefillIngredients,
@@ -916,8 +916,9 @@ function RecipeForm({ open, onClose, recipe, prefill, categories }: RecipeFormPr
                         textAlign: 'right',
                         outline: 'none',
                       }}
-                      min={1}
-                      {...register(`ingredients.${index}.quantity_g`, { required: true, min: 1, valueAsNumber: true })}
+                      min={0.1}
+                      step="0.1"
+                      {...register(`ingredients.${index}.quantity_g`, { required: true, min: 0.1, valueAsNumber: true })}
                     />
                     <select
                       value={ingredientUnits[index] ?? 'g'}

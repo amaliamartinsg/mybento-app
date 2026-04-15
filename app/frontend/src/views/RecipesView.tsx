@@ -17,12 +17,17 @@ import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import CircularProgress from '@mui/material/CircularProgress'
+import List from '@mui/material/List'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemText from '@mui/material/ListItemText'
+import Divider from '@mui/material/Divider'
 import SpeedDial from '@mui/material/SpeedDial'
 import SpeedDialAction from '@mui/material/SpeedDialAction'
 import SpeedDialIcon from '@mui/material/SpeedDialIcon'
 import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
+import KitchenIcon from '@mui/icons-material/Kitchen'
 import CloseIcon from '@mui/icons-material/Close'
 import { useDebounce } from 'use-debounce'
 import { useQuery } from '@tanstack/react-query'
@@ -32,8 +37,8 @@ import RecipeDetailDialog from '../components/RecipeDetailDialog'
 import RecipeForm from './RecipeForm'
 import { useRecipes, useRecipe, useDeleteRecipe } from '../hooks/useRecipes'
 import { getCategories } from '../api/categories'
-import { suggestRecipe } from '../api/recipes'
-import type { Recipe, RecipeSuggestion } from '../types/recipe'
+import { generateRecipeFromTitle, searchRecipesByIngredients } from '../api/recipes'
+import type { Recipe, RecipeSuggestion, RecipeSummary } from '../types/recipe'
 import type { Category } from '../types/category'
 
 function SkeletonGrid() {
@@ -72,12 +77,20 @@ function RecipesView() {
 
   const { data: detailRecipe = null } = useRecipe(detailRecipeId)
 
+  // Generate recipe by title state
+  const [generateOpen, setGenerateOpen] = useState(false)
+  const [recipeTitleInput, setRecipeTitleInput] = useState('')
+  const [generateLoading, setGenerateLoading] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
   // Despensa Virtual state
   const [pantryOpen, setPantryOpen] = useState(false)
   const [pantryInput, setPantryInput] = useState('')
   const [pantryIngredients, setPantryIngredients] = useState<string[]>([])
   const [pantryLoading, setPantryLoading] = useState(false)
   const [pantryError, setPantryError] = useState<string | null>(null)
+  const [pantryResults, setPantryResults] = useState<RecipeSummary[]>([])
+  const [pantrySearched, setPantrySearched] = useState(false)
   const [prefillSuggestion, setPrefillSuggestion] = useState<RecipeSuggestion | null>(null)
 
   // Delete confirm
@@ -145,6 +158,26 @@ function RecipesView() {
     [],
   )
 
+  const handleGenerateRecipe = async () => {
+    const title = recipeTitleInput.trim()
+    if (!title) return
+
+    setGenerateLoading(true)
+    setGenerateError(null)
+    try {
+      const suggestion = await generateRecipeFromTitle(title)
+      setPrefillSuggestion(suggestion)
+      setGenerateOpen(false)
+      setRecipeTitleInput('')
+      setEditingRecipe(null)
+      setFormOpen(true)
+    } catch (e) {
+      setGenerateError((e as Error).message)
+    } finally {
+      setGenerateLoading(false)
+    }
+  }
+
   // Despensa Virtual
   const handlePantryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === 'Enter' || e.key === ',') && pantryInput.trim()) {
@@ -157,18 +190,14 @@ function RecipesView() {
     }
   }
 
-  const handlePantrySuggest = async () => {
+  const handlePantrySearch = async () => {
     if (pantryIngredients.length === 0) return
     setPantryLoading(true)
     setPantryError(null)
+    setPantrySearched(true)
     try {
-      const suggestion = await suggestRecipe(pantryIngredients)
-      setPrefillSuggestion(suggestion)
-      setPantryOpen(false)
-      setPantryIngredients([])
-      setPantryInput('')
-      setEditingRecipe(null)
-      setFormOpen(true)
+      const results = await searchRecipesByIngredients(pantryIngredients)
+      setPantryResults(results)
     } catch (e) {
       setPantryError((e as Error).message)
     } finally {
@@ -392,8 +421,24 @@ function RecipesView() {
         />
         <SpeedDialAction
           icon={<AutoAwesomeIcon />}
-          tooltipTitle="Despensa Virtual"
-          onClick={() => setPantryOpen(true)}
+          tooltipTitle="Generar recetas"
+          onClick={() => {
+            setGenerateError(null)
+            setRecipeTitleInput('')
+            setGenerateOpen(true)
+          }}
+        />
+        <SpeedDialAction
+          icon={<KitchenIcon />}
+          tooltipTitle="Despensa virtual"
+          onClick={() => {
+            setPantryError(null)
+            setPantryInput('')
+            setPantryIngredients([])
+            setPantryResults([])
+            setPantrySearched(false)
+            setPantryOpen(true)
+          }}
         />
       </SpeedDial>
 
@@ -426,6 +471,55 @@ function RecipesView() {
           <Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
           <Button color="error" onClick={handleDeleteConfirm} disabled={deleteRecipe.isPending}>
             {deleteRecipe.isPending ? <CircularProgress size={18} /> : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Generate recipes dialog */}
+      <Dialog open={generateOpen} onClose={() => setGenerateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          Generar recetas
+          <IconButton
+            onClick={() => setGenerateOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Escribe el nombre de la receta y la IA generará un borrador completo para revisarlo antes de guardarlo.
+          </Typography>
+          <TextField
+            fullWidth
+            autoFocus
+            size="small"
+            label="Nombre de la receta"
+            placeholder="ej: Lasaña ligera de pollo"
+            value={recipeTitleInput}
+            onChange={(e) => setRecipeTitleInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void handleGenerateRecipe()
+              }
+            }}
+          />
+          {generateError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {generateError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGenerateOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleGenerateRecipe}
+            disabled={!recipeTitleInput.trim() || generateLoading}
+            startIcon={generateLoading ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+          >
+            Generar
           </Button>
         </DialogActions>
       </Dialog>
@@ -470,16 +564,41 @@ function RecipesView() {
               {pantryError}
             </Alert>
           )}
+          {!pantryError && pantrySearched && !pantryLoading && pantryResults.length === 0 && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              No se han encontrado recetas configuradas con esos ingredientes.
+            </Alert>
+          )}
+          {pantryResults.length > 0 && (
+            <List sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, py: 0 }}>
+              {pantryResults.map((recipe, index) => (
+                <Box key={recipe.id}>
+                  {index > 0 && <Divider />}
+                  <ListItemButton
+                    onClick={() => {
+                      setPantryOpen(false)
+                      setDetailRecipeId(recipe.id)
+                    }}
+                  >
+                    <ListItemText
+                      primary={recipe.name}
+                      secondary={`${Math.round(recipe.kcal)} kcal/ración · P ${Math.round(recipe.prot_g)}g · HC ${Math.round(recipe.hc_g)}g · G ${Math.round(recipe.fat_g)}g`}
+                    />
+                  </ListItemButton>
+                </Box>
+              ))}
+            </List>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPantryOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
-            onClick={handlePantrySuggest}
+            onClick={handlePantrySearch}
             disabled={pantryIngredients.length === 0 || pantryLoading}
-            startIcon={pantryLoading ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+            startIcon={pantryLoading ? <CircularProgress size={16} color="inherit" /> : <KitchenIcon />}
           >
-            Sugerir
+            Buscar recetas
           </Button>
         </DialogActions>
       </Dialog>

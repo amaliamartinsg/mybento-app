@@ -113,6 +113,18 @@ class RecipeSuggestion(BaseModel):
     ingredients: list[RecipeSuggestionIngredient] = []
 
 
+class RecipeTitleRequest(BaseModel):
+    """Payload para generar una receta con IA a partir de un titulo."""
+
+    title: str = Field(min_length=1)
+
+
+class IngredientSearchRequest(BaseModel):
+    """Payload para buscar recetas existentes por ingredientes."""
+
+    ingredients: list[str] = Field(min_length=1)
+
+
 class ScrapeRequest(BaseModel):
     """Payload para solicitar extracción de receta desde una URL externa."""
 

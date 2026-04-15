@@ -7,6 +7,7 @@ import type {
   RecipeUpdate,
   RecipeSuggestion,
   RecipeFilters,
+  RecipeSummary,
   ScrapedRecipe,
 } from '../types/recipe'
 
@@ -35,7 +36,17 @@ export async function deleteRecipe(id: number): Promise<void> {
 }
 
 export async function suggestRecipe(ingredients: string[]): Promise<RecipeSuggestion> {
-  const { data } = await client.post<RecipeSuggestion>('/recipes/suggest', ingredients)
+  const { data } = await client.post<RecipeSuggestion>('/recipes/suggest', { ingredients })
+  return data
+}
+
+export async function generateRecipeFromTitle(title: string): Promise<RecipeSuggestion> {
+  const { data } = await client.post<RecipeSuggestion>('/recipes/generate-from-title', { title })
+  return data
+}
+
+export async function searchRecipesByIngredients(ingredients: string[]): Promise<RecipeSummary[]> {
+  const { data } = await client.post<RecipeSummary[]>('/recipes/search-by-ingredients', { ingredients })
   return data
 }
 

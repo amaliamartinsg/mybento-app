@@ -16,10 +16,12 @@ from app.backend.database import get_session
 from app.backend.models.category import SubCategory
 from app.backend.models.recipe import Recipe, RecipeIngredient
 from app.backend.schemas.recipe import (
+    IngredientSearchRequest,
     RecipeCreate,
     RecipeRead,
     RecipeSuggestion,
     RecipeSummary,
+    RecipeTitleRequest,
     RecipeUpdate,
     ScrapedRecipe,
     ScrapeRequest,
@@ -30,7 +32,11 @@ from app.backend.services.recipe_macros import (
     to_total_from_per_serving,
 )
 from app.backend.services.nutrition_resolver import resolve_ingredient_nutrition
-from app.backend.services.openai_service import OpenAIAuthError, suggest_recipe
+from app.backend.services.openai_service import (
+    OpenAIAuthError,
+    generate_recipe_from_title,
+    suggest_recipe,
+)
 from app.backend.services.unsplash import UnsplashAuthError, search_images
 from app.backend.services.scraper import (
     ScraperAuthError,
@@ -65,6 +71,21 @@ def _build_recipe_read(recipe: Recipe) -> RecipeRead:
         fat_g=macros.fat_g,
         created_at=recipe.created_at,
         ingredients=recipe.ingredients,
+    )
+
+
+def _build_recipe_summary(recipe: Recipe) -> RecipeSummary:
+    """Convert a Recipe ORM instance to its RecipeSummary schema."""
+    macros = per_serving_totals(recipe)
+    return RecipeSummary(
+        id=recipe.id,
+        name=recipe.name,
+        meal_type=recipe.meal_type,
+        kcal=macros.kcal,
+        prot_g=macros.prot_g,
+        hc_g=macros.hc_g,
+        fat_g=macros.fat_g,
+        image_url=recipe.image_url,
     )
 
 
@@ -137,19 +158,7 @@ def list_recipes(
             query = query.where(Recipe.name.ilike(f"%{search}%"))  # type: ignore[attr-defined]
 
         recipes = session.exec(query).all()
-        return [
-            RecipeSummary(
-                id=r.id,
-                name=r.name,
-                meal_type=r.meal_type,
-                kcal=per_serving_totals(r).kcal,
-                prot_g=per_serving_totals(r).prot_g,
-                hc_g=per_serving_totals(r).hc_g,
-                fat_g=per_serving_totals(r).fat_g,
-                image_url=r.image_url,
-            )
-            for r in recipes
-        ]
+        return [_build_recipe_summary(recipe) for recipe in recipes]
 
 
 # ---------------------------------------------------------------------------
@@ -472,11 +481,74 @@ async def scrape_recipe_endpoint(payload: ScrapeRequest) -> ScrapedRecipe:
 
 
 @router.post(
+    "/generate-from-title",
+    response_model=RecipeSuggestion,
+    summary="Generar receta con IA a partir de un titulo",
+)
+async def generate_recipe_from_title_endpoint(payload: RecipeTitleRequest) -> RecipeSuggestion:
+    """Generate a recipe draft from a title provided by the user."""
+    title = payload.title.strip()
+    if not title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes proporcionar un titulo de receta",
+        )
+
+    try:
+        suggestion = await generate_recipe_from_title(title)
+    except OpenAIAuthError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from exc
+
+    return suggestion
+
+
+@router.post(
+    "/search-by-ingredients",
+    response_model=list[RecipeSummary],
+    summary="Buscar recetas existentes por ingredientes",
+)
+def search_recipes_by_ingredients(payload: IngredientSearchRequest) -> list[RecipeSummary]:
+    """Search existing recipes using ingredient-name matches."""
+    search_terms = [ingredient.strip().lower() for ingredient in payload.ingredients if ingredient.strip()]
+    if not search_terms:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes proporcionar al menos un ingrediente",
+        )
+
+    with get_session() as session:
+        recipes = session.exec(select(Recipe)).all()
+        scored_recipes: list[tuple[int, Recipe]] = []
+
+        for recipe in recipes:
+            _ = recipe.ingredients
+            ingredient_names = [ingredient.name.lower() for ingredient in recipe.ingredients]
+            score = sum(
+                1
+                for term in search_terms
+                if any(term in ingredient_name for ingredient_name in ingredient_names)
+            )
+            if score > 0:
+                scored_recipes.append((score, recipe))
+
+        scored_recipes.sort(key=lambda item: (-item[0], item[1].name.lower()))
+        return [_build_recipe_summary(recipe) for _, recipe in scored_recipes]
+
+
+@router.post(
     "/suggest",
     response_model=RecipeSuggestion,
     summary="Sugerir receta con IA (Despensa Virtual)",
 )
-async def suggest_recipe_endpoint(ingredients: list[str]) -> RecipeSuggestion:
+async def suggest_recipe_endpoint(payload: IngredientSearchRequest) -> RecipeSuggestion:
     """Ask GPT-4o mini to suggest a recipe from the provided ingredients.
 
     The returned :class:`RecipeSuggestion` is a draft that the user reviews
@@ -489,14 +561,14 @@ async def suggest_recipe_endpoint(ingredients: list[str]) -> RecipeSuggestion:
         HTTPException 400: If no ingredients are provided.
         HTTPException 502: If the OpenAI call fails or returns invalid JSON.
     """
-    if not ingredients:
+    if not payload.ingredients:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debes proporcionar al menos un ingrediente",
         )
 
     try:
-        suggestion = await suggest_recipe(ingredients)
+        suggestion = await suggest_recipe(payload.ingredients)
     except OpenAIAuthError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

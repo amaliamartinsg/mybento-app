@@ -70,7 +70,9 @@ export interface RecipeUpdate {
 
 export interface RecipeSuggestion {
   name: string
-  instructions_text: string
+  category_suggestion?: string | null
+  servings?: number
+  instructions_text?: string | null
   ingredients: IngredientInput[]
 }
 
@@ -85,6 +87,15 @@ export interface RecipeFilters {
   category_id?: number
   subcategory_id?: number
   search?: string
+}
+
+export type RecipeSummary = Omit<Recipe, 'ingredients' | 'instructions_text' | 'external_url' | 'created_at' | 'servings' | 'subcategory_id'> & {
+  subcategory_id: number | null
+  instructions_text: string | null
+  external_url: string | null
+  servings: number
+  created_at: string
+  ingredients?: RecipeIngredient[]
 }
 
 export interface BarcodeResolvedProduct {
