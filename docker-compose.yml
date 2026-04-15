@@ -87,6 +87,21 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/metrics:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - backend
+    restart: unless-stopped
+    logging: *default-logging
+
   promtail:
     image: grafana/promtail:3.2.1
     command: -config.file=/etc/promtail/config.yml
@@ -108,6 +123,7 @@ services:
       - export GF_SECURITY_ADMIN_PASSWORD="$$(cat /run/config/grafana_admin_password.txt)" && /run.sh
     depends_on:
       - loki
+      - prometheus
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
@@ -116,6 +132,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./ops/logging/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+      - ./ops/logging/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
       - ${GRAFANA_ADMIN_PASSWORD_FILE_PATH:-./.secrets/grafana_admin_password.txt}:/run/config/grafana_admin_password.txt:ro
     restart: unless-stopped
     logging: *default-logging
@@ -126,4 +143,5 @@ volumes:
   scraper_data:
   loki_data:
   grafana_data:
+  prometheus_data:
   promtail_positions:

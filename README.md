@@ -12,11 +12,13 @@ Servicios en `docker-compose.yml`:
 - `backend`: FastAPI interno en `:8000` (healthcheck en `/health`)
 - `scraper`: FastAPI interno en `:8001` (`/process`, `/health`)
 - `loki`, `promtail`, `grafana`: centralizacion y consulta de logs
+- `prometheus`: scraping de metricas del backend para Grafana
 
 Persistencia:
 - `db_data`: sqlite del backend (`/data/recipe_manager.db`)
 - `scraper_outputs`: artefactos de extraccion de la API de ingestion
 - `scraper_data`: sqlite de rate limit diario del scraper
+- `prometheus_data`: almacenamiento TSDB de metricas
 
 ## Estructura del repositorio
 
@@ -95,6 +97,8 @@ docker compose up -d --build
 docker compose ps
 curl http://localhost:8080
 curl http://localhost:8000/health
+curl http://localhost:8000/metrics
+curl http://localhost:9090/-/healthy
 curl http://localhost:3000
 ```
 
@@ -153,11 +157,19 @@ En dev, Vite proxya `/api` a `http://localhost:8000`.
 
 Backend (`:8000`):
 - `GET /health`
+- `GET /metrics`
 - `GET/POST/PUT/DELETE /recipes`
 - `POST /recipes/suggest`
 - `POST /recipes/scrape`
 - `GET /recipes/images`
 - routers adicionales: `categories`, `menu`, `profile`, `extras`, `unit_weights`
+
+Observabilidad:
+- Grafana queda provisionado con datasource `Loki` y `Prometheus`
+- Dashboard inicial: `MyBento Overview`
+- Dashboard operativo: `MyBento Operations`
+- Metricas expuestas por backend: trafico HTTP, latencia, total de recetas, semanas, slots rellenados, extras y `kcal_target`
+- Alertas base en Prometheus: backend caido, error rate alto, latencia p95 alta y menu con baja ocupacion
 
 Scraper (`:8001`, interno):
 - `GET /health`

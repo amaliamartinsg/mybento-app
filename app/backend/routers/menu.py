@@ -90,13 +90,6 @@ def _build_slot_read(slot: MenuSlot) -> SlotRead:
         if slot.recipe is not None
         else None
     )
-
-
-def _extra_ratio(day_extra) -> float:
-    """Return the gram-based multiplier for an extra entry."""
-    if day_extra.grams is not None and day_extra.extra.serving_g > 0:
-        return day_extra.grams / day_extra.extra.serving_g
-    return day_extra.quantity
     second_recipe_summary = (
         RecipeSummary(
             id=slot.second_recipe.id,
@@ -114,6 +107,13 @@ def _extra_ratio(day_extra) -> float:
         recipe=recipe_summary,
         second_recipe=second_recipe_summary,
     )
+
+
+def _extra_ratio(day_extra) -> float:
+    """Return the gram-based multiplier for an extra entry."""
+    if day_extra.grams is not None and day_extra.extra.serving_g > 0:
+        return day_extra.grams / day_extra.extra.serving_g
+    return day_extra.quantity
 
 
 def _build_menu_week_read(week: MenuWeek) -> MenuWeekRead:

@@ -7,6 +7,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from app.backend.database import create_db_and_tables
 from app.backend.logging_utils import (
@@ -16,6 +17,7 @@ from app.backend.logging_utils import (
     reset_trace_id,
     set_trace_id,
 )
+from app.backend.metrics import metrics_response, observe_http_request
 from app.backend.routers import (
     categories,
     extras,
@@ -41,7 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="MyBento API",
-    description="Backend para la aplicación de gestión de recetas y menús semanales.",
+    description="Backend para la aplicacion de gestion de recetas y menus semanales.",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -60,9 +62,11 @@ async def trace_logging_middleware(request: Request, call_next):
     trace_id = request.headers.get(TRACE_HEADER_NAME) or generate_trace_id()
     token = set_trace_id(trace_id)
     started_at = time.perf_counter()
+    status_code = 500
 
     try:
         response = await call_next(request)
+        status_code = response.status_code
     except Exception:
         duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
         logger.exception(
@@ -92,6 +96,13 @@ async def trace_logging_middleware(request: Request, call_next):
         )
         return response
     finally:
+        if request.url.path != "/metrics":
+            observe_http_request(
+                method=request.method,
+                path=request.url.path,
+                status_code=status_code,
+                started_at=started_at,
+            )
         reset_trace_id(token)
 
 
@@ -106,5 +117,12 @@ app.include_router(nutrition.router)
 
 @app.get("/health", tags=["health"])
 def health_check() -> dict[str, str]:
-    """Verificar que el servidor está corriendo."""
+    """Verificar que el servidor esta corriendo."""
     return {"status": "ok"}
+
+
+@app.get("/metrics", tags=["observability"], include_in_schema=False)
+def prometheus_metrics() -> Response:
+    """Expose Prometheus metrics for scraping."""
+    payload, content_type = metrics_response()
+    return Response(content=payload, media_type=content_type)
