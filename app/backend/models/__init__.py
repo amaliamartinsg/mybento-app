@@ -7,6 +7,7 @@ from app.backend.models.nutrition import NutritionProduct
 from app.backend.models.profile import ActivityLevel, Goal, Profile
 from app.backend.models.recipe import Recipe, RecipeIngredient
 from app.backend.models.unit_weight import UnitWeight
+from app.backend.models.user import User
 
 __all__ = [
     "Category",
@@ -24,4 +25,5 @@ __all__ = [
     "Goal",
     "Profile",
     "UnitWeight",
+    "User",
 ]

@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import type { PaletteMode } from '@mui/material'
 import App from './App'
 import { createAppTheme } from './theme'
+import { AuthProvider } from './contexts/AuthContext'
 
 export const ColorModeContext = React.createContext({ toggleColorMode: () => {} })
 
@@ -37,7 +38,9 @@ function Root() {
         <CssBaseline />
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-            <App />
+            <AuthProvider>
+              <App />
+            </AuthProvider>
           </BrowserRouter>
         </QueryClientProvider>
       </ThemeProvider>
