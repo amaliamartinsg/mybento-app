@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _saveToken(access_token)
     const me = await getMeApi(access_token)
     setUser(me)
-    navigate('/')
+    navigate('/recipes')
   }, [_saveToken, navigate])
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _saveToken(access_token)
     const me = await getMeApi(access_token)
     setUser(me)
-    navigate('/')
+    navigate('/recipes')
   }, [_saveToken, navigate])
 
   const logout = useCallback(() => {

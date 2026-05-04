@@ -9,12 +9,15 @@ Route order matters for FastAPI's path matching:
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import select
 
 from app.backend.database import get_session
 from app.backend.models.category import SubCategory
 from app.backend.models.recipe import Recipe, RecipeIngredient
+from app.backend.models.user_saved_recipe import UserSavedRecipe
+from app.backend.services import auth_service
 from app.backend.schemas.recipe import (
     IngredientSearchRequest,
     RecipeCreate,
@@ -46,6 +49,17 @@ from app.backend.services.scraper import (
 from app.backend.services.usda import USDAAuthError
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
+_bearer = HTTPBearer(auto_error=False)
+
+
+def _get_user_id(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> int:
+    """Return the authenticated user's id, or 1 as mono-user fallback."""
+    if credentials is None:
+        return 1
+    token_data = auth_service.decode_token(credentials.credentials)
+    return token_data.user_id if token_data and token_data.user_id else 1
 
 
 # ---------------------------------------------------------------------------
@@ -74,18 +88,21 @@ def _build_recipe_read(recipe: Recipe) -> RecipeRead:
     )
 
 
-def _build_recipe_summary(recipe: Recipe) -> RecipeSummary:
+def _build_recipe_summary(recipe: Recipe, bookmarked_ids: set[int] | None = None) -> RecipeSummary:
     """Convert a Recipe ORM instance to its RecipeSummary schema."""
     macros = per_serving_totals(recipe)
     return RecipeSummary(
         id=recipe.id,
         name=recipe.name,
+        subcategory_id=recipe.subcategory_id,
         meal_type=recipe.meal_type,
         kcal=macros.kcal,
         prot_g=macros.prot_g,
         hc_g=macros.hc_g,
         fat_g=macros.fat_g,
         image_url=recipe.image_url,
+        is_global=recipe.is_global,
+        is_bookmarked=recipe.id in bookmarked_ids if bookmarked_ids is not None else False,
     )
 
 
@@ -135,6 +152,7 @@ def list_recipes(
     category_id: Annotated[int | None, Query()] = None,
     subcategory_id: Annotated[int | None, Query()] = None,
     search: Annotated[str | None, Query()] = None,
+    user_id: int = Depends(_get_user_id),
 ) -> list[RecipeSummary]:
     """Return a summarised list of recipes with optional filters.
 
@@ -144,6 +162,12 @@ def list_recipes(
         search: Case-insensitive partial name match.
     """
     with get_session() as session:
+        saved_ids: set[int] = set(
+            session.exec(
+                select(UserSavedRecipe.recipe_id).where(UserSavedRecipe.user_id == user_id)
+            ).all()
+        )
+
         query = select(Recipe)
 
         if subcategory_id is not None:
@@ -158,7 +182,7 @@ def list_recipes(
             query = query.where(Recipe.name.ilike(f"%{search}%"))  # type: ignore[attr-defined]
 
         recipes = session.exec(query).all()
-        return [_build_recipe_summary(recipe) for recipe in recipes]
+        return [_build_recipe_summary(recipe, saved_ids) for recipe in recipes]
 
 
 # ---------------------------------------------------------------------------

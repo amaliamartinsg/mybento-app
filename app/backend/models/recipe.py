@@ -63,6 +63,7 @@ class Recipe(SQLModel, table=True):
     fat_g: float = Field(default=0)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_global: bool = Field(default=False)
 
     ingredients: list["RecipeIngredient"] = Relationship(back_populates="recipe")
     subcategory: Optional["SubCategory"] = Relationship(back_populates="recipes")

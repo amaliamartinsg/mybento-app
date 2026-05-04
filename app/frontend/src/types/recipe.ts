@@ -39,6 +39,8 @@ export interface Recipe {
   hc_g: number
   fat_g: number
   created_at: string
+  is_global: boolean
+  is_bookmarked: boolean
   ingredients: RecipeIngredient[]
 }
 
@@ -87,15 +89,21 @@ export interface RecipeFilters {
   category_id?: number
   subcategory_id?: number
   search?: string
+  bookmarked?: boolean
 }
 
-export type RecipeSummary = Omit<Recipe, 'ingredients' | 'instructions_text' | 'external_url' | 'created_at' | 'servings' | 'subcategory_id'> & {
+export interface RecipeSummary {
+  id: number
+  name: string
   subcategory_id: number | null
-  instructions_text: string | null
-  external_url: string | null
-  servings: number
-  created_at: string
-  ingredients?: RecipeIngredient[]
+  meal_type: MealType
+  image_url: string | null
+  kcal: number
+  prot_g: number
+  hc_g: number
+  fat_g: number
+  is_global: boolean
+  is_bookmarked: boolean
 }
 
 export interface BarcodeResolvedProduct {

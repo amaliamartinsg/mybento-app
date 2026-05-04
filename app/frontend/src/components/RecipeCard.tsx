@@ -1,20 +1,24 @@
 import Box from '@mui/material/Box'
-import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
-import EditIcon from '@mui/icons-material/Edit'
+import Typography from '@mui/material/Typography'
+import BookmarkIcon from '@mui/icons-material/Bookmark'
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder'
 import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
-import type { Recipe } from '../types/recipe'
+import type { RecipeSummary } from '../types/recipe'
 
 interface RecipeCardProps {
-  recipe: Recipe
+  recipe: RecipeSummary
   subcategoryName?: string
-  onEdit: (recipe: Recipe) => void
-  onDelete: (recipe: Recipe) => void
-  onView: (recipe: Recipe) => void
+  onEdit: (recipe: RecipeSummary) => void
+  onDelete: (recipe: RecipeSummary) => void
+  onView: (recipe: RecipeSummary) => void
+  onBookmark?: (recipe: RecipeSummary, save: boolean) => void
+  isBookmarked?: boolean
 }
 
-function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: RecipeCardProps) {
+function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView, onBookmark, isBookmarked }: RecipeCardProps) {
   return (
     <Box
       onClick={() => onView(recipe)}
@@ -66,8 +70,8 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
         <Box
           sx={{
             position: 'absolute',
-            top: 12,
-            right: 12,
+            bottom: 8,
+            right: 8,
             bgcolor: 'rgba(255,255,255,0.85)',
             backdropFilter: 'blur(8px)',
             px: 1.5,
@@ -82,6 +86,27 @@ function RecipeCard({ recipe, subcategoryName, onEdit, onDelete, onView }: Recip
         >
           {Math.round(recipe.kcal)} kcal/ración
         </Box>
+
+        {/* Bookmark button */}
+        {onBookmark && (
+          <IconButton
+            size="small"
+            onClick={(e) => { e.stopPropagation(); onBookmark(recipe, !isBookmarked) }}
+            aria-label={isBookmarked ? 'Quitar marcador' : 'Guardar receta'}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              bgcolor: 'rgba(255,255,255,0.9)',
+              '&:hover': { bgcolor: 'white' },
+            }}
+          >
+            {isBookmarked
+              ? <BookmarkIcon fontSize="small" color="primary" />
+              : <BookmarkBorderIcon fontSize="small" />
+            }
+          </IconButton>
+        )}
 
         {/* Edit / Delete on hover */}
         <Box

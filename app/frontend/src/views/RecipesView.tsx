@@ -3,6 +3,8 @@ import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import Chip from '@mui/material/Chip'
@@ -26,6 +28,7 @@ import SpeedDialAction from '@mui/material/SpeedDialAction'
 import SpeedDialIcon from '@mui/material/SpeedDialIcon'
 import AddIcon from '@mui/icons-material/Add'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
 import KitchenIcon from '@mui/icons-material/Kitchen'
 import CloseIcon from '@mui/icons-material/Close'
@@ -35,9 +38,9 @@ import ExtrasTab from '../components/ExtrasTab'
 import RecipeCard from '../components/RecipeCard'
 import RecipeDetailDialog from '../components/RecipeDetailDialog'
 import RecipeForm from './RecipeForm'
-import { useRecipes, useRecipe, useDeleteRecipe } from '../hooks/useRecipes'
+import { useRecipes, useRecipe, useDeleteRecipe, useBookmarkedRecipes, useBookmarkRecipe, useUnbookmarkRecipe } from '../hooks/useRecipes'
 import { getCategories } from '../api/categories'
-import { generateRecipeFromTitle, searchRecipesByIngredients } from '../api/recipes'
+import { generateRecipeFromTitle, getRecipe, searchRecipesByIngredients } from '../api/recipes'
 import type { Recipe, RecipeSuggestion, RecipeSummary } from '../types/recipe'
 import type { Category } from '../types/category'
 
@@ -66,6 +69,7 @@ function SkeletonGrid() {
 
 function RecipesView() {
   const [activeTab, setActiveTab] = useState(0)
+  const [recipeMode, setRecipeMode] = useState<'all' | 'saved'>('all')
   const [searchInput, setSearchInput] = useState('')
   const [debouncedSearch] = useDebounce(searchInput, 300)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -94,7 +98,7 @@ function RecipesView() {
   const [prefillSuggestion, setPrefillSuggestion] = useState<RecipeSuggestion | null>(null)
 
   // Delete confirm
-  const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<RecipeSummary | null>(null)
 
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -111,7 +115,22 @@ function RecipesView() {
     ...(selectedSubcategoryId ? { subcategory_id: selectedSubcategoryId } : selectedCategoryId ? { category_id: selectedCategoryId } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   }
-  const { data: recipes = [], isLoading } = useRecipes(Object.keys(filters).length ? filters : undefined)
+  const { data: allRecipes = [], isLoading: isRecipesLoading } = useRecipes(Object.keys(filters).length ? filters : undefined)
+  const { data: bookmarkedRecipes = [], isLoading: isBookmarkedLoading } = useBookmarkedRecipes()
+  const bookmarkMutation = useBookmarkRecipe()
+  const unbookmarkMutation = useUnbookmarkRecipe()
+
+  const bookmarkedIds = new Set(bookmarkedRecipes.map((r) => r.id))
+  const recipes = recipeMode === 'saved' ? bookmarkedRecipes : allRecipes
+  const isLoading = recipeMode === 'saved' ? isBookmarkedLoading : isRecipesLoading
+
+  const handleBookmark = (recipe: RecipeSummary, save: boolean) => {
+    if (save) {
+      bookmarkMutation.mutate(recipe.id)
+    } else {
+      unbookmarkMutation.mutate(recipe.id)
+    }
+  }
 
   const deleteRecipe = useDeleteRecipe()
 
@@ -131,9 +150,22 @@ function RecipesView() {
     setSelectedSubcategoryId(selectedSubcategoryId === subId ? null : subId)
   }
 
-  const handleEdit = (recipe: Recipe) => {
-    setEditingRecipe(recipe)
-    setFormOpen(true)
+  const handleEdit = async (recipe: Recipe | RecipeSummary) => {
+    setPrefillSuggestion(null)
+
+    if ('ingredients' in recipe && Array.isArray(recipe.ingredients)) {
+      setEditingRecipe(recipe)
+      setFormOpen(true)
+      return
+    }
+
+    try {
+      const fullRecipe = await getRecipe(recipe.id)
+      setEditingRecipe(fullRecipe)
+      setFormOpen(true)
+    } catch (e) {
+      setSnackbar({ open: true, message: (e as Error).message, severity: 'error' })
+    }
   }
 
   const handleDeleteConfirm = async () => {
@@ -241,123 +273,145 @@ function RecipesView() {
 
       {activeTab === 0 && (
       <Box sx={{ p: 3, pb: 10 }}>
-      {/* Search bar */}
-      <Box sx={{ position: 'relative', mb: 4 }}>
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 16,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#6a769e',
-            display: 'flex',
-            alignItems: 'center',
-          }}
+      {/* Todas / Mis recetas toggle */}
+      <Box sx={{ display: 'flex', mb: 3 }}>
+        <ToggleButtonGroup
+          exclusive
+          value={recipeMode}
+          onChange={(_, v) => v !== null && setRecipeMode(v)}
+          size="small"
+          sx={{ bgcolor: '#eef2ff', borderRadius: '12px', p: 0.5 }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
-        </Box>
-        <TextField
-          fullWidth
-          placeholder="Buscar recetas saludables..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              pl: 6,
-              py: 0.5,
-              bgcolor: '#eef2ff',
-              borderRadius: '16px',
-              '& fieldset': { border: 'none' },
-              '&.Mui-focused fieldset': { border: '2px solid #4da8ff' },
-            },
-          }}
-        />
+          <ToggleButton value="all" sx={{ borderRadius: '8px !important', fontWeight: 600, fontSize: 13, px: 2.5, textTransform: 'none', border: 'none' }}>
+            Todas
+          </ToggleButton>
+          <ToggleButton value="saved" sx={{ borderRadius: '8px !important', fontWeight: 600, fontSize: 13, px: 2.5, textTransform: 'none', border: 'none' }}>
+            Mis recetas
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
-      {/* Category chips */}
-      <Box
-        sx={{
-          overflowX: 'auto',
-          display: 'flex',
-          gap: 1.5,
-          pb: 1,
-          mb: 1,
-          mx: -3,
-          px: 3,
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
-      >
-        {categories.map((cat) => (
-          <Box
-            key={cat.id}
-            component="button"
-            onClick={() => handleCategoryClick(cat.id)}
-            sx={{
-              flexShrink: 0,
-              bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#e8eeff',
-              color: selectedCategoryId === cat.id ? 'white' : '#44464f',
-              px: 3,
-              py: 1.25,
-              borderRadius: 100,
-              fontSize: 14,
-              fontWeight: selectedCategoryId === cat.id ? 700 : 600,
-              fontFamily: '"Inter", sans-serif',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              letterSpacing: '0.02em',
-              '&:hover': {
-                bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#dde3f0',
-              },
-            }}
-          >
-            {cat.name}
-          </Box>
-        ))}
-      </Box>
-
-      {/* Subcategory chips */}
-      {selectedCategory && selectedCategory.subcategories.length > 0 && (
-        <Box
-          sx={{
-            overflowX: 'auto',
-            display: 'flex',
-            gap: 1,
-            pb: 1,
-            mb: 3,
-            mx: -3,
-            px: 3,
-            scrollbarWidth: 'none',
-            '&::-webkit-scrollbar': { display: 'none' },
-          }}
-        >
-          {selectedCategory.subcategories.map((sub) => (
+      {/* Search + filters — hidden in saved mode */}
+      {recipeMode === 'all' && (
+        <>
+          <Box sx={{ position: 'relative', mb: 4 }}>
             <Box
-              key={sub.id}
-              component="button"
-              onClick={() => handleSubcategoryClick(sub.id)}
               sx={{
-                flexShrink: 0,
-                bgcolor: selectedSubcategoryId === sub.id ? '#5071d5' : '#e8eeff',
-                color: selectedSubcategoryId === sub.id ? 'white' : '#44464f',
-                px: 2,
-                py: 0.75,
-                borderRadius: 100,
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: '"Inter", sans-serif',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
+                position: 'absolute',
+                left: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#6a769e',
+                display: 'flex',
+                alignItems: 'center',
               }}
             >
-              {sub.name}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
             </Box>
-          ))}
-        </Box>
+            <TextField
+              fullWidth
+              placeholder="Buscar recetas saludables..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  pl: 6,
+                  py: 0.5,
+                  bgcolor: '#eef2ff',
+                  borderRadius: '16px',
+                  '& fieldset': { border: 'none' },
+                  '&.Mui-focused fieldset': { border: '2px solid #4da8ff' },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Category chips */}
+          <Box
+            sx={{
+              overflowX: 'auto',
+              display: 'flex',
+              gap: 1.5,
+              pb: 1,
+              mb: 1,
+              mx: -3,
+              px: 3,
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
+            {categories.map((cat) => (
+              <Box
+                key={cat.id}
+                component="button"
+                onClick={() => handleCategoryClick(cat.id)}
+                sx={{
+                  flexShrink: 0,
+                  bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#e8eeff',
+                  color: selectedCategoryId === cat.id ? 'white' : '#44464f',
+                  px: 3,
+                  py: 1.25,
+                  borderRadius: 100,
+                  fontSize: 14,
+                  fontWeight: selectedCategoryId === cat.id ? 700 : 600,
+                  fontFamily: '"Inter", sans-serif',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  letterSpacing: '0.02em',
+                  '&:hover': {
+                    bgcolor: selectedCategoryId === cat.id ? '#4da8ff' : '#dde3f0',
+                  },
+                }}
+              >
+                {cat.name}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Subcategory chips */}
+          {selectedCategory && selectedCategory.subcategories.length > 0 && (
+            <Box
+              sx={{
+                overflowX: 'auto',
+                display: 'flex',
+                gap: 1,
+                pb: 1,
+                mb: 3,
+                mx: -3,
+                px: 3,
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': { display: 'none' },
+              }}
+            >
+              {selectedCategory.subcategories.map((sub) => (
+                <Box
+                  key={sub.id}
+                  component="button"
+                  onClick={() => handleSubcategoryClick(sub.id)}
+                  sx={{
+                    flexShrink: 0,
+                    bgcolor: selectedSubcategoryId === sub.id ? '#5071d5' : '#e8eeff',
+                    color: selectedSubcategoryId === sub.id ? 'white' : '#44464f',
+                    px: 2,
+                    py: 0.75,
+                    borderRadius: 100,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: '"Inter", sans-serif',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {sub.name}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </>
       )}
 
       {/* Recipe grid */}
@@ -376,10 +430,21 @@ function RecipesView() {
                 gap: 2,
               }}
             >
-              <RestaurantIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
-              <Typography color="text.secondary">
-                No hay recetas. ¡Añade la primera!
-              </Typography>
+              {recipeMode === 'saved' ? (
+                <>
+                  <BookmarkBorderIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                  <Typography color="text.secondary">
+                    Aún no tienes recetas guardadas. Toca el marcador en cualquier receta.
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <RestaurantIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                  <Typography color="text.secondary">
+                    No hay recetas. ¡Añade la primera!
+                  </Typography>
+                </>
+              )}
             </Box>
           </Grid>
         ) : (
@@ -391,6 +456,8 @@ function RecipesView() {
                 onEdit={handleEdit}
                 onDelete={setDeleteTarget}
                 onView={(r) => setDetailRecipeId(r.id)}
+                onBookmark={handleBookmark}
+                isBookmarked={recipe.is_bookmarked || bookmarkedIds.has(recipe.id)}
               />
             </Grid>
           ))

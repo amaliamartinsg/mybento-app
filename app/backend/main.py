@@ -20,6 +20,7 @@ from app.backend.logging_utils import (
 from app.backend.metrics import metrics_response, observe_http_request
 from app.backend.routers import (
     auth,
+    bookmarks,
     categories,
     extras,
     menu,
@@ -108,6 +109,7 @@ async def trace_logging_middleware(request: Request, call_next):
 
 
 app.include_router(auth.router)
+app.include_router(bookmarks.router)  # must be before recipes.router (GET /recipes/bookmarked vs GET /recipes/{id})
 app.include_router(recipes.router)
 app.include_router(categories.router)
 app.include_router(menu.router)

@@ -5,6 +5,9 @@ import {
   createRecipe,
   updateRecipe,
   deleteRecipe,
+  bookmarkRecipe,
+  unbookmarkRecipe,
+  getBookmarkedRecipes,
 } from '../api/recipes'
 import type { RecipeCreate, RecipeUpdate, RecipeFilters } from '../types/recipe'
 
@@ -51,6 +54,35 @@ export function useDeleteRecipe() {
     mutationFn: (id: number) => deleteRecipe(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    },
+  })
+}
+
+export function useBookmarkedRecipes() {
+  return useQuery({
+    queryKey: ['recipes', 'bookmarked'],
+    queryFn: getBookmarkedRecipes,
+  })
+}
+
+export function useBookmarkRecipe() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => bookmarkRecipe(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['recipes', 'bookmarked'] })
+    },
+  })
+}
+
+export function useUnbookmarkRecipe() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => unbookmarkRecipe(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+      queryClient.invalidateQueries({ queryKey: ['recipes', 'bookmarked'] })
     },
   })
 }

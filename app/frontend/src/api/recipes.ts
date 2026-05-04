@@ -11,8 +11,8 @@ import type {
   ScrapedRecipe,
 } from '../types/recipe'
 
-export async function getRecipes(filters?: RecipeFilters): Promise<Recipe[]> {
-  const { data } = await client.get<Recipe[]>('/recipes', { params: filters })
+export async function getRecipes(filters?: RecipeFilters): Promise<RecipeSummary[]> {
+  const { data } = await client.get<RecipeSummary[]>('/recipes', { params: filters })
   return data
 }
 
@@ -76,4 +76,17 @@ export async function searchOpenFoodFactsByName(query: string): Promise<BarcodeR
     timeout: 15000,
   })
   return data.product
+}
+
+export async function bookmarkRecipe(id: number): Promise<void> {
+  await client.post(`/recipes/${id}/bookmark`)
+}
+
+export async function unbookmarkRecipe(id: number): Promise<void> {
+  await client.delete(`/recipes/${id}/bookmark`)
+}
+
+export async function getBookmarkedRecipes(): Promise<RecipeSummary[]> {
+  const { data } = await client.get<RecipeSummary[]>('/recipes/bookmarked')
+  return data
 }

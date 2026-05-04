@@ -29,6 +29,7 @@ _MIGRATIONS = [
     "ALTER TABLE extra ADD COLUMN serving_g FLOAT NOT NULL DEFAULT 100",
     "ALTER TABLE extra ADD COLUMN lookup_source TEXT NOT NULL DEFAULT 'manual'",
     "ALTER TABLE menudayextra ADD COLUMN grams FLOAT",
+    "ALTER TABLE recipe ADD COLUMN is_global BOOLEAN NOT NULL DEFAULT 0",
 ]
 
 

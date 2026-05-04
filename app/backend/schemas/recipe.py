@@ -88,6 +88,8 @@ class RecipeRead(BaseModel):
     hc_g: float
     fat_g: float
     created_at: datetime
+    is_global: bool = False
+    is_bookmarked: bool = False
     ingredients: list[IngredientRead] = []
 
     model_config = {"from_attributes": True}
@@ -149,11 +151,14 @@ class RecipeSummary(BaseModel):
 
     id: int
     name: str
+    subcategory_id: int | None = None
     meal_type: MealType
     kcal: float
     prot_g: float
     hc_g: float
     fat_g: float
     image_url: str | None
+    is_global: bool = False
+    is_bookmarked: bool = False
 
     model_config = {"from_attributes": True}
