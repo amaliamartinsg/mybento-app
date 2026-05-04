@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Spacing — 8px scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:18px 24px;display:grid;gap:6px;}
+  .row{display:grid;grid-template-columns:90px 1fr 80px;align-items:center;gap:14px;padding:4px 0;}
+  .name{font:700 11px var(--mb-font-mono);color:var(--mb-fg-subtle);}
+  .bar{height:14px;background:#4da8ff;border-radius:3px;}
+  .val{font:500 11px var(--mb-font-mono);color:var(--mb-fg-subtle);text-align:right;}
+</style></head><body>
+<div class="wrap">
+  <div class="row"><span class="name">space-0-5</span><div class="bar" style="width:4px"></div><span class="val">4px</span></div>
+  <div class="row"><span class="name">space-1</span><div class="bar" style="width:8px"></div><span class="val">8px</span></div>
+  <div class="row"><span class="name">space-1-5</span><div class="bar" style="width:12px"></div><span class="val">12px</span></div>
+  <div class="row"><span class="name">space-2</span><div class="bar" style="width:16px"></div><span class="val">16px</span></div>
+  <div class="row"><span class="name">space-3</span><div class="bar" style="width:24px"></div><span class="val">24px</span></div>
+  <div class="row"><span class="name">space-4</span><div class="bar" style="width:32px"></div><span class="val">32px</span></div>
+  <div class="row"><span class="name">space-6</span><div class="bar" style="width:48px"></div><span class="val">48px</span></div>
+</div>
+</body></html>

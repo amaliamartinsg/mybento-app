@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Colors — Brand (purple)</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--mb-surface);font-family:var(--mb-font-ui);}
+  .wrap{padding:20px 24px;display:grid;grid-template-columns:1.4fr 1fr;gap:18px;}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .swatch{display:flex;flex-direction:column;gap:6px;}
+  .chip{height:56px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);}
+  .name{font:700 11px/1.2 var(--mb-font-ui);color:var(--mb-fg);}
+  .hex{font:500 10px/1.2 var(--mb-font-mono);color:var(--mb-fg-subtle);}
+  .grad{height:90px;border-radius:16px;background:linear-gradient(135deg,#68548d 0%,#b39ddb 100%);color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;font:800 13px/1.2 var(--mb-font-ui);}
+  .grad small{font:500 10px/1.2 var(--mb-font-mono);opacity:.85;margin-top:4px;}
+</style></head><body>
+<div class="wrap">
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:#68548d"></div><div class="name">brand-primary</div><div class="hex">#68548d</div></div>
+    <div class="swatch"><div class="chip" style="background:#b39ddb"></div><div class="name">brand-primary-light</div><div class="hex">#b39ddb</div></div>
+    <div class="swatch"><div class="chip" style="background:#4a3870"></div><div class="name">brand-primary-dark</div><div class="hex">#4a3870</div></div>
+    <div class="swatch"><div class="chip" style="background:#21638d"></div><div class="name">brand-secondary</div><div class="hex">#21638d</div></div>
+    <div class="swatch"><div class="chip" style="background:#e8dff8"></div><div class="name">primary-fixed</div><div class="hex">#e8dff8</div></div>
+    <div class="swatch"><div class="chip" style="background:#dae8f5"></div><div class="name">secondary-fixed</div><div class="hex">#dae8f5</div></div>
+  </div>
+  <div class="grad">Velvet CTA gradient<small>135° · #68548d → #b39ddb</small></div>
+</div>
+</body></html>

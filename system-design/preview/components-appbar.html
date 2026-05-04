@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — AppBar & BottomNav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fef7fd;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:14px 20px;display:grid;gap:14px;}
+  .appbar{background:#68548d;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .appbar img{height:22px;filter:invert(1);mix-blend-mode:screen;}
+  .appbar .r{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#fff;opacity:.85;}
+  .nav{background:rgba(200,215,255,0.85);backdrop-filter:blur(20px);border-radius:32px 32px 14px 14px;padding:12px 16px;display:flex;justify-content:space-around;align-items:center;box-shadow:0 -4px 24px rgba(0,130,253,0.06);}
+  .tab{display:flex;flex-direction:column;align-items:center;padding:6px 16px;border-radius:14px;font:500 11px var(--mb-font-ui);color:#1a1c1e;gap:2px;}
+  .tab.on{background:#68548d;color:#fff;}
+  .tab svg{width:20px;height:20px;}
+</style></head><body>
+<div class="wrap">
+  <div class="appbar"><img src="../assets/mybento-logo-simple.png" alt="MyBento"><span class="r">☾</span></div>
+  <div class="nav">
+    <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3h3v8H4zM5 11v10h1V11zm5-8v6a2 2 0 0 0 2 2v10h1V11a2 2 0 0 0 2-2V3h-1v6h-1V3h-1v6h-1V3z"/></svg>Recetas</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm12 8v10H5V10z"/></svg>Menú</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm7.4-2.5 2.1 1.6-2 3.5-2.5-1a7.6 7.6 0 0 1-1.7 1l-.3 2.6h-4l-.3-2.6a7.6 7.6 0 0 1-1.7-1l-2.5 1-2-3.5L6.6 13a7 7 0 0 1 0-2L4.5 9.4l2-3.5 2.5 1c.5-.4 1.1-.8 1.7-1L11 3.3h4l.3 2.6c.6.2 1.2.6 1.7 1l2.5-1 2 3.5-2.1 1.6c.1.7.1 1.4 0 2z"/></svg>Ajustes</div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — Macro Bars</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:18px 22px;}
+  .card{background:#fff;border-radius:28px;padding:20px;box-shadow:0 4px 20px rgba(0,130,253,0.06);}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .head-lbl{font:500 13px var(--mb-font-ui);color:#44464f;margin-bottom:2px;}
+  .kcal{font:800 32px/1 var(--mb-font-ui);letter-spacing:-0.02em;color:#4da8ff;}
+  .kcal span{font:500 13px var(--mb-font-ui);color:#44464f;margin-left:4px;}
+  .bolt{width:42px;height:42px;border-radius:14px;background:#005cb2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .kcal-bar{height:12px;background:#eef2ff;border-radius:999px;margin-bottom:18px;overflow:hidden;}
+  .kcal-bar>div{height:100%;width:80%;background:linear-gradient(90deg,#4da8ff,#005cb2);border-radius:999px;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .macro{display:flex;flex-direction:column;gap:6px;}
+  .macro-top{display:flex;justify-content:space-between;}
+  .tag{font:700 9px var(--mb-font-ui);letter-spacing:.08em;text-transform:uppercase;color:#44464f;}
+  .val{font:700 11px var(--mb-font-ui);}
+  .rail{height:5px;background:#eef2ff;border-radius:999px;overflow:hidden;}
+  .rail>div{height:100%;border-radius:999px;}
+</style></head><body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <div><div class="head-lbl">Resumen del día</div><div class="kcal">1.840<span>/ 2.200 kcal</span></div></div>
+      <div class="bolt">⚡</div>
+    </div>
+    <div class="kcal-bar"><div></div></div>
+    <div class="grid">
+      <div class="macro"><div class="macro-top"><span class="tag">Proteínas</span><span class="val" style="color:#1565C0">138g</span></div><div class="rail"><div style="width:84%;background:#1565C0"></div></div></div>
+      <div class="macro"><div class="macro-top"><span class="tag">Hidratos</span><span class="val" style="color:#F57F17">201g</span></div><div class="rail"><div style="width:81%;background:#F57F17"></div></div></div>
+      <div class="macro"><div class="macro-top"><span class="tag">Grasas</span><span class="val" style="color:#C62828">52g</span></div><div class="rail"><div style="width:85%;background:#C62828"></div></div></div>
+    </div>
+  </div>
+</div>
+</body></html>

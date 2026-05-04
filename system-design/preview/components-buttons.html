@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:20px 24px;display:grid;gap:14px;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .lbl{font:700 10px/1 var(--mb-font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mb-fg-subtle);}
+  .btn{border:none;cursor:pointer;font-family:var(--mb-font-ui);display:inline-flex;align-items:center;gap:8px;}
+  .save{background:linear-gradient(90deg,#4da8ff,#005cb2);color:#fff;padding:12px 22px;border-radius:16px;font-weight:700;font-size:15px;box-shadow:0 4px 16px rgba(0,130,253,0.25);}
+  .autofill{background:#5071d5;color:#fff;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;letter-spacing:.05em;box-shadow:0 4px 12px rgba(80,113,213,0.3);}
+  .ghost{background:rgba(0,130,253,0.08);color:#4da8ff;padding:8px 16px;border-radius:999px;font-weight:700;font-size:13px;}
+  .velvet{background:linear-gradient(135deg,#68548d,#b39ddb);color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;font-size:14px;}
+  .outline{background:#fff;color:#1a1c1e;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:inset 0 0 0 1px rgba(121,116,126,0.3);}
+  .danger{background:#fff;color:#ba1a1a;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:inset 0 0 0 1px rgba(186,26,26,0.35);}
+</style></head><body>
+<div class="wrap">
+  <div class="lbl">Primary CTA (views)</div>
+  <div class="row"><button class="btn save">✦ Guardar perfil</button><button class="btn autofill">✦ AUTOFILL</button></div>
+  <div class="lbl">Secondary / Ghost</div>
+  <div class="row"><button class="btn ghost">+ Añadir</button><button class="btn outline">Cambiar</button><button class="btn danger">Quitar</button></div>
+  <div class="lbl">Brand velvet (theme.ts default)</div>
+  <div class="row"><button class="btn velvet">Contained primary</button></div>
+</div>
+</body></html>

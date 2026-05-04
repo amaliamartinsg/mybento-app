@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Colors — Product blue</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--mb-surface);font-family:var(--mb-font-ui);}
+  .wrap{padding:20px 24px;}
+  .row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+  .swatch{display:flex;flex-direction:column;gap:6px;}
+  .chip{height:60px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);}
+  .name{font:700 11px/1.2 var(--mb-font-ui);color:var(--mb-fg);}
+  .hex{font:500 10px/1.2 var(--mb-font-mono);color:var(--mb-fg-subtle);}
+</style></head><body>
+<div class="wrap">
+  <div class="row">
+    <div class="swatch"><div class="chip" style="background:#4da8ff"></div><div class="name">primary</div><div class="hex">#4da8ff</div></div>
+    <div class="swatch"><div class="chip" style="background:#005cb2"></div><div class="name">primary-strong</div><div class="hex">#005cb2</div></div>
+    <div class="swatch"><div class="chip" style="background:#5071d5"></div><div class="name">primary-mid</div><div class="hex">#5071d5</div></div>
+    <div class="swatch"><div class="chip" style="background:#eef2ff"></div><div class="name">surface-chip</div><div class="hex">#eef2ff</div></div>
+    <div class="swatch"><div class="chip" style="background:#f0f4ff"></div><div class="name">surface-ice</div><div class="hex">#f0f4ff</div></div>
+    <div class="swatch"><div class="chip" style="background:#dde3f0"></div><div class="name">surface-muted</div><div class="hex">#dde3f0</div></div>
+  </div>
+</div>
+</body></html>

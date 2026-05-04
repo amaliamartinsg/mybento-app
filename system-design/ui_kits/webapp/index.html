@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MyBento — UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit.css">
+<style>
+  body { margin: 0; font-family: 'Inter', sans-serif; }
+  .phone-label { color: rgba(40,30,20,.85); font-weight: 600; font-size: 15px; letter-spacing:-.3px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="components/Icons.jsx"></script>
+<script type="text/babel" src="components/RecetasView.jsx"></script>
+<script type="text/babel" src="components/MenuView.jsx"></script>
+<script type="text/babel" src="components/AjustesView.jsx"></script>
+<script type="text/babel" src="components/LoginView.jsx"></script>
+
+<script type="text/babel">
+const {
+  DesignCanvas, DCSection, DCArtboard, DCPostIt,
+  RecetasView, MenuView, AjustesView, LoginView,
+  RestaurantIcon, CalendarIcon, SettingsIcon, LightModeIcon,
+} = window;
+
+function PhoneShell({ tab, setTab, children }) {
+  return (
+    <div className="mb-phone">
+      <div className="status">
+        <span>9:41</span>
+        <span className="icons">
+          <svg width="16" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 10V8h2v2H1zm4 0V6h2v4H5zm4 0V3h2v7H9zm4 0V0h2v10h-2z"/></svg>
+          <svg width="14" height="10" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 0C4.7 0 2.3 1 .5 2.5l7 9 7-9C12.7 1 10.3 0 7.5 0z"/></svg>
+          <svg width="22" height="10" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="currentColor" strokeOpacity=".4"/><rect x="3" y="3" width="15" height="6" rx="1" fill="currentColor"/><rect x="22" y="4" width="1" height="4" rx=".5" fill="currentColor" fillOpacity=".4"/></svg>
+        </span>
+      </div>
+
+      <div className="mb-appbar">
+        <img src="../../assets/mybento-logo-simple.png" alt="MyBento"/>
+        <button className="theme-toggle"><LightModeIcon size={20}/></button>
+      </div>
+
+      <div className="scroll">{children}</div>
+
+      <div className="mb-bottomnav">
+        <button className={'mb-tab ' + (tab==='recetas'?'on':'')} onClick={()=>setTab('recetas')}>
+          <RestaurantIcon size={20}/>Recetas
+        </button>
+        <button className={'mb-tab ' + (tab==='menu'?'on':'')} onClick={()=>setTab('menu')}>
+          <CalendarIcon size={20}/>Menú
+        </button>
+        <button className={'mb-tab ' + (tab==='ajustes'?'on':'')} onClick={()=>setTab('ajustes')}>
+          <SettingsIcon size={20}/>Ajustes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LivePhone({ initialTab }) {
+  const [tab, setTab] = React.useState(initialTab);
+  return (
+    <PhoneShell tab={tab} setTab={setTab}>
+      {tab === 'recetas' && <RecetasView/>}
+      {tab === 'menu' && <MenuView/>}
+      {tab === 'ajustes' && <AjustesView/>}
+    </PhoneShell>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="product" title="MyBento · web app" subtitle="Tres vistas principales — navegables (pulsa los tabs de abajo)">
+        <DCArtboard id="recetas" label="Recetas" width={390} height={844}>
+          <LivePhone initialTab="recetas"/>
+        </DCArtboard>
+        <DCArtboard id="menu" label="Menú semanal" width={390} height={844}>
+          <LivePhone initialTab="menu"/>
+        </DCArtboard>
+        <DCArtboard id="ajustes" label="Ajustes · Mi Perfil" width={390} height={844}>
+          <LivePhone initialTab="ajustes"/>
+        </DCArtboard>
+        <DCPostIt top={-6} left={1320} width={210} rotate={3}>
+          Cada phone es interactivo — pulsa los tabs para ver las tres vistas; pulsa el icono ⤢ para abrir en grande.
+        </DCPostIt>
+      </DCSection>
+
+      <DCSection id="auth" title="Login & onboarding" subtitle="Versión desktop (web) — alterna entre iniciar sesión y crear cuenta">
+        <DCArtboard id="login" label="Login · Bienvenido de vuelta" width={1000} height={800}>
+          <LoginView width={1000} height={800}/>
+        </DCArtboard>
+        <DCPostIt top={-6} left={1040} width={220} rotate={-2}>
+          Pulsa “Regístrate” dentro de la card para ver el modo signup en vivo.
+        </DCPostIt>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

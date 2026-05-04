@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — Recipe card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fef7fd;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:16px 24px;display:grid;grid-template-columns:240px 240px;gap:18px;}
+  .card{background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .img{position:relative;height:130px;background:linear-gradient(135deg,#c3dff0 0%,#dae8f5 100%);display:flex;align-items:center;justify-content:center;color:#4da8ff;font-size:42px;}
+  .kcal{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);color:#4da8ff;padding:4px 12px;border-radius:999px;font:700 11px var(--mb-font-ui);}
+  .body{padding:14px 16px 16px;}
+  .eyebrow{font:700 10px var(--mb-font-ui);letter-spacing:.1em;text-transform:uppercase;color:#6a769e;margin-bottom:4px;}
+  .name{font:800 15px/1.2 var(--mb-font-ui);letter-spacing:-0.02em;color:#1a1c1e;margin-bottom:10px;}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;}
+  .tag{padding:3px 10px;border-radius:8px;font:700 10px var(--mb-font-ui);}
+  .t-p{background:rgba(21,101,192,0.1);color:#1565C0;}
+  .t-h{background:rgba(245,127,23,0.1);color:#F57F17;}
+  .t-g{background:rgba(198,40,40,0.1);color:#C62828;}
+</style></head><body>
+<div class="wrap">
+  <div class="card">
+    <div class="img">🍲<div class="kcal">420 kcal/ración</div></div>
+    <div class="body">
+      <div class="eyebrow">Pollo</div>
+      <div class="name">Pollo al curry con arroz basmati</div>
+      <div class="tags"><span class="tag t-p">P: 38g/r</span><span class="tag t-h">HC: 45g/r</span><span class="tag t-g">G: 12g/r</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="img">🥗<div class="kcal">290 kcal/ración</div></div>
+    <div class="body">
+      <div class="eyebrow">Ensaladas</div>
+      <div class="name">Ensalada César ligera con pollo</div>
+      <div class="tags"><span class="tag t-p">P: 28g/r</span><span class="tag t-h">HC: 18g/r</span><span class="tag t-g">G: 14g/r</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

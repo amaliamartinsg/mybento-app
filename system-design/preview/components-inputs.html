@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — Inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:20px 24px;display:grid;gap:14px;}
+  .lbl{font:700 10px/1 var(--mb-font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mb-fg-subtle);}
+  .search{position:relative;background:#eef2ff;border-radius:16px;padding:14px 18px 14px 48px;font:500 14px var(--mb-font-ui);}
+  .search svg{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:#6a769e;}
+  .search.focus{box-shadow:inset 0 0 0 2px #4da8ff;}
+  .ph{color:#6a769e;}
+  .field{background:#eef2ff;border-radius:8px;padding:10px 14px;font:500 14px var(--mb-font-ui);}
+  .toggle{display:inline-flex;background:#eef2ff;border-radius:12px;padding:4px;gap:2px;}
+  .toggle button{border:none;background:transparent;padding:8px 16px;border-radius:8px;font:600 13px var(--mb-font-ui);color:#44464f;cursor:pointer;}
+  .toggle button.on{background:#e8dff8;color:#68548d;}
+</style></head><body>
+<div class="wrap">
+  <div class="lbl">Search (Recetas)</div>
+  <div class="search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span class="ph">Buscar recetas saludables…</span></div>
+  <div class="lbl">Text field (default / focused)</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="field"><span class="ph">Ingrediente</span></div>
+    <div class="field" style="box-shadow:inset 0 0 0 2px rgba(104,84,141,0.5);background:#e6dff1;">pollo, arroz…</div>
+  </div>
+  <div class="lbl">Toggle group (Objetivo)</div>
+  <div class="toggle"><button>Perder</button><button class="on">Mantenimiento</button><button>Ganar</button></div>
+</div>
+</body></html>

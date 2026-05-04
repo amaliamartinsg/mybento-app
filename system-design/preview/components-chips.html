@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Components — Chips</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#fff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:20px 24px;display:grid;gap:14px;}
+  .lbl{font:700 10px/1 var(--mb-font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mb-fg-subtle);}
+  .row{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{padding:10px 22px;border-radius:999px;font:600 14px var(--mb-font-ui);border:none;letter-spacing:.02em;}
+  .cat{background:#e8eeff;color:#44464f;}
+  .cat-a{background:#4da8ff;color:#fff;font-weight:700;}
+  .sub{padding:6px 14px;font-size:12px;font-weight:600;}
+  .sub-a{background:#5071d5;color:#fff;padding:6px 14px;font-size:12px;font-weight:600;}
+</style></head><body>
+<div class="wrap">
+  <div class="lbl">Category chips (Recetas)</div>
+  <div class="row">
+    <button class="chip cat-a">Principales</button>
+    <button class="chip cat">Snacks</button>
+    <button class="chip cat">Desayunos</button>
+    <button class="chip cat">Postres</button>
+  </div>
+  <div class="lbl">Subcategory chips</div>
+  <div class="row">
+    <button class="chip sub-a">Pollo</button>
+    <button class="chip sub cat">Pescado</button>
+    <button class="chip sub cat">Vegetariano</button>
+  </div>
+</div>
+</body></html>

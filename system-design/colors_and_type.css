@@ -1,0 +1,202 @@
+/* ─────────────────────────────────────────────────────────────────
+   MyBento — Colors & Type
+   Source of truth: src/theme.ts + src/views/*.tsx usage
+
+   NOTE: The app has TWO palettes coexisting:
+   1) `theme.ts` declares a PURPLE "Culinary Atelier" (#68548d) theme
+      used by the MUI AppBar / brand shell and the logo.
+   2) Views (RecipesView, MenuView, DayDetailView, SettingsView)
+      override locally with a BLUE palette (#4da8ff → #005cb2).
+      This is what the user sees across 90% of screens.
+
+   Tokens below capture both, with `--mb-*` = blue product palette
+   and `--mb-brand-*` = purple brand/logo shell.
+   ───────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Lexend:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ── Brand (purple, logo + theme.ts) ─────────────────────────── */
+  --mb-brand-primary:        #68548d;   /* velvet purple — logo wordmark */
+  --mb-brand-primary-light:  #b39ddb;   /* gradient partner */
+  --mb-brand-primary-dark:   #4a3870;
+  --mb-brand-secondary:      #21638d;   /* deep teal */
+  --mb-brand-on-primary:     #ffffff;
+
+  /* Velvet CTA gradient from theme.ts */
+  --mb-brand-cta-gradient:   linear-gradient(135deg, #68548d 0%, #b39ddb 100%);
+
+  /* ── Product palette (blue, what views actually use) ─────────── */
+  --mb-primary:        #4da8ff;   /* sky — primary accent */
+  --mb-primary-strong: #005cb2;   /* deep blue — emphasis, app bars */
+  --mb-primary-mid:    #5071d5;   /* indigo — secondary actions (Autofill) */
+  --mb-primary-light:  rgba(0,130,253,0.08);   /* chip/bg tint */
+  --mb-primary-lighter:rgba(0,130,253,0.15);
+
+  /* Primary linear gradient used on day-summary bar & Save button */
+  --mb-primary-gradient: linear-gradient(90deg, #4da8ff 0%, #005cb2 100%);
+
+  /* ── Surfaces ────────────────────────────────────────────────── */
+  --mb-surface:        #fef7fd;   /* app background (from theme.ts) */
+  --mb-surface-alt:    #f8f9ff;   /* day detail bg */
+  --mb-surface-ice:    #f0f4ff;   /* week selector / category tab row */
+  --mb-surface-paper:  #ffffff;   /* cards */
+  --mb-surface-chip:   #eef2ff;   /* inputs / chips / empty cells */
+  --mb-surface-chip-2: #e8eeff;   /* chip variant */
+  --mb-surface-muted:  #dde3f0;   /* progress rails, dividers */
+
+  /* ── Text ────────────────────────────────────────────────────── */
+  --mb-fg:             #1a1c1e;   /* near-black */
+  --mb-fg-body:        #1d1b1f;
+  --mb-fg-muted:       #44464f;   /* secondary text */
+  --mb-fg-subtle:      #6a769e;   /* tertiary / chip labels */
+  --mb-fg-disabled:    #c3c7d0;   /* outline on dashed empty cells */
+  --mb-fg-inverse:     #ffffff;
+
+  /* ── Macro colors (semantic) ─────────────────────────────────── */
+  --mb-macro-kcal:     #4da8ff;   /* reuses primary */
+  --mb-macro-prot:     #1565C0;   /* protein — deep blue */
+  --mb-macro-hc:       #F57F17;   /* carbs — amber */
+  --mb-macro-fat:      #C62828;   /* fat — red */
+  --mb-macro-prot-bg:  rgba(21,101,192,0.1);
+  --mb-macro-hc-bg:    rgba(245,127,23,0.1);
+  --mb-macro-fat-bg:   rgba(198,40,40,0.1);
+  --mb-macro-kcal-bg:  rgba(0,130,253,0.1);
+
+  /* ── Status ──────────────────────────────────────────────────── */
+  --mb-error:          #ba1a1a;
+  --mb-error-soft:     #b3261e;
+  --mb-success:        #2e7d32;
+
+  /* ── Dividers & strokes ──────────────────────────────────────── */
+  --mb-divider:        rgba(121,116,126,0.15);
+  --mb-divider-soft:   rgba(121,116,126,0.12);
+  --mb-stroke-focus:   2px solid #4da8ff;
+  --mb-stroke-dashed:  2px dashed #c3c7d0;
+
+  /* ── Shadows (soft ambient, never harsh) ─────────────────────── */
+  --mb-shadow-xs:      0 1px 4px rgba(0,0,0,0.05);
+  --mb-shadow-sm:      0 1px 4px rgba(0,0,0,0.06);
+  --mb-shadow-md:      0 2px 8px rgba(0,0,0,0.08);
+  --mb-shadow-lg:      0 6px 20px rgba(0,0,0,0.12);
+  --mb-shadow-card:    0 4px 20px rgba(0,130,253,0.04);
+  --mb-shadow-cta:     0 4px 16px rgba(0,130,253,0.25);
+  --mb-shadow-cta-alt: 0 4px 12px rgba(80,113,213,0.3);
+  --mb-shadow-dialog:  0 8px 48px rgba(73,69,78,0.06);
+  --mb-shadow-bottom-nav: 0 -4px 24px rgba(0,130,253,0.06);
+
+  /* ── Radii ───────────────────────────────────────────────────── */
+  --mb-radius-xs:   8px;    /* buttons, selects, small inputs */
+  --mb-radius-sm:   12px;   /* default card / toggle group */
+  --mb-radius-md:   16px;   /* search bar, bottom-nav top */
+  --mb-radius-lg:   24px;   /* recipe cards, extras picker */
+  --mb-radius-xl:   28px;   /* macro summary card */
+  --mb-radius-2xl:  32px;   /* bottom-nav top corners */
+  --mb-radius-pill: 9999px; /* chips, progress bars, FAB ring */
+
+  /* ── Spacing (MUI 8px base) ──────────────────────────────────── */
+  --mb-space-0-5: 4px;
+  --mb-space-1:   8px;
+  --mb-space-1-5: 12px;
+  --mb-space-2:   16px;
+  --mb-space-2-5: 20px;
+  --mb-space-3:   24px;
+  --mb-space-4:   32px;
+  --mb-space-5:   40px;
+  --mb-space-6:   48px;
+
+  /* ── Type ────────────────────────────────────────────────────── */
+  --mb-font-ui:       'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --mb-font-brand:    'Lexend', 'Inter', sans-serif;
+  --mb-font-mono:     ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Semantic type styles — used by views */
+  --mb-type-display:  800 36px/1 var(--mb-font-ui);       /* 36px kcal count */
+  --mb-type-h1:       800 24px/1.2 var(--mb-font-ui);     /* section titles */
+  --mb-type-h2:       800 18px/1.25 var(--mb-font-ui);    /* recipe card name, dialog titles */
+  --mb-type-h3:       700 15px/1.3 var(--mb-font-ui);     /* tab labels, week label */
+  --mb-type-body:     500 14px/1.6 var(--mb-font-ui);
+  --mb-type-body-sm:  500 13px/1.5 var(--mb-font-ui);
+  --mb-type-caption:  500 12px/1.4 var(--mb-font-ui);
+  --mb-type-micro:    700 11px/1.3 var(--mb-font-ui);     /* macro chips, subcategory eyebrow */
+  --mb-type-eyebrow:  700 10px/1.2 var(--mb-font-ui);     /* DAY / WEEK labels, uppercase+tracked */
+  --mb-type-tick:     800 9px/1.2 var(--mb-font-ui);      /* 1°/2° course markers */
+
+  /* Semantic tracking */
+  --mb-track-tight:  -0.02em;     /* headlines from theme.ts */
+  --mb-track-normal:  0;
+  --mb-track-eyebrow: 0.1em;      /* uppercase tags */
+  --mb-track-label:   0.05em;     /* day short labels */
+
+  /* ── Motion ──────────────────────────────────────────────────── */
+  --mb-dur-fast:   120ms;
+  --mb-dur-base:   200ms;
+  --mb-dur-med:    300ms;
+  --mb-dur-slow:   400ms;
+  --mb-ease:       cubic-bezier(.4,0,.2,1);  /* MUI standard */
+  --mb-ease-out:   cubic-bezier(0,0,.2,1);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Semantic element classes — ready-to-use recipes
+   ──────────────────────────────────────────────────────────────── */
+
+.mb-body {
+  font: var(--mb-type-body);
+  color: var(--mb-fg-body);
+  background: var(--mb-surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mb-h1         { font: var(--mb-type-h1);       letter-spacing: var(--mb-track-tight); color: var(--mb-fg); }
+.mb-h2         { font: var(--mb-type-h2);       letter-spacing: var(--mb-track-tight); color: var(--mb-fg); }
+.mb-display    { font: var(--mb-type-display);  letter-spacing: var(--mb-track-tight); color: var(--mb-primary); }
+.mb-eyebrow    {
+  font: var(--mb-type-eyebrow);
+  letter-spacing: var(--mb-track-eyebrow);
+  text-transform: uppercase;
+  color: var(--mb-fg-subtle);
+}
+.mb-micro      { font: var(--mb-type-micro);   color: var(--mb-fg-muted); }
+.mb-caption    { font: var(--mb-type-caption); color: var(--mb-fg-muted); }
+
+/* Card recipe */
+.mb-card {
+  background: var(--mb-surface-paper);
+  border-radius: var(--mb-radius-lg);
+  box-shadow: var(--mb-shadow-sm);
+  overflow: hidden;
+}
+
+/* Pill chip recipe */
+.mb-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--mb-radius-pill);
+  background: var(--mb-surface-chip-2);
+  color: var(--mb-fg-muted);
+  font: var(--mb-type-body-sm);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all var(--mb-dur-base) var(--mb-ease);
+}
+.mb-chip--active {
+  background: var(--mb-primary);
+  color: var(--mb-fg-inverse);
+  font-weight: 700;
+}
+
+/* Macro tag recipe */
+.mb-macro-tag {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font: var(--mb-type-micro);
+}
+.mb-macro-tag--prot { background: var(--mb-macro-prot-bg); color: var(--mb-macro-prot); }
+.mb-macro-tag--hc   { background: var(--mb-macro-hc-bg);   color: var(--mb-macro-hc);   }
+.mb-macro-tag--fat  { background: var(--mb-macro-fat-bg);  color: var(--mb-macro-fat);  }
+.mb-macro-tag--kcal { background: var(--mb-macro-kcal-bg); color: var(--mb-macro-kcal); }

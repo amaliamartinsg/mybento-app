@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Spacing — Shadows</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#f8f9ff;font-family:var(--mb-font-ui);color:var(--mb-fg);}
+  .wrap{padding:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .box{width:110px;height:64px;background:#fff;border-radius:16px;}
+  .label{font:700 11px/1.2 var(--mb-font-ui);}
+  .val{font:500 10px var(--mb-font-mono);color:var(--mb-fg-subtle);text-align:center;max-width:130px;}
+</style></head><body>
+<div class="wrap">
+  <div class="cell"><div class="box" style="box-shadow:0 1px 4px rgba(0,0,0,0.06)"></div><div class="label">shadow-sm</div><div class="val">cards en reposo</div></div>
+  <div class="cell"><div class="box" style="box-shadow:0 6px 20px rgba(0,0,0,0.12)"></div><div class="label">shadow-lg</div><div class="val">card hover</div></div>
+  <div class="cell"><div class="box" style="box-shadow:0 4px 20px rgba(0,130,253,0.08)"></div><div class="label">shadow-card</div><div class="val">summary tinted blue</div></div>
+  <div class="cell"><div class="box" style="box-shadow:0 4px 16px rgba(0,130,253,0.25);background:#4da8ff"></div><div class="label">shadow-cta</div><div class="val">Guardar perfil</div></div>
+</div>
+</body></html>
